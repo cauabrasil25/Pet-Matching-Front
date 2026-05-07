@@ -1,5 +1,5 @@
-import { AppShell } from '@/components/layout/AppShell';
-import { PetCard } from '@/components/pets/PetCard';
+import { AppShell } from '../../components/layout/AppShell';
+import { PetCard } from '../../components/pets/PetCard';
 
 const animals = [
   { name: 'Luna', description: 'Filhote carinhosa, pronta para adoção.' },

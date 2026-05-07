@@ -1,5 +1,5 @@
-import { apiClient } from '@/services/apiClient';
-import type { AnimalFiltroRequest, AnimalResponse, CriarAnimalRequest, AtualizarAnimalRequest, AtualizarStatusAnimalRequest } from '@/types/animal';
+import { apiClient } from './apiClient';
+import type { AnimalFiltroRequest, AnimalResponse, CriarAnimalRequest, AtualizarAnimalRequest, AtualizarStatusAnimalRequest } from '../types/animal';
 
 export const animalService = {
   listar: (filtro?: AnimalFiltroRequest) => {

@@ -1,5 +1,5 @@
-import { apiClient } from '@/services/apiClient';
-import type { AplicacaoAdocaoResponse, CriarAplicacaoAdocaoRequest, StatusAplicacao } from '@/types/application';
+import { apiClient } from './apiClient';
+import type { AplicacaoAdocaoResponse, CriarAplicacaoAdocaoRequest, StatusAplicacao } from '../types/application';
 
 export const applicationService = {
   criar: (payload: CriarAplicacaoAdocaoRequest) => apiClient<AplicacaoAdocaoResponse>('/api/aplicacoes-adocao', {

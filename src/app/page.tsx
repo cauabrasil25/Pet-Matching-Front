@@ -1,5 +1,5 @@
-import { AppShell } from '@/components/layout/AppShell';
-import { SectionTitle } from '@/components/ui/SectionTitle';
+import { AppShell } from '../components/layout/AppShell';
+import { SectionTitle } from '../components/ui/SectionTitle';
 
 const highlights = [
   'Busca pública de animais com filtros',

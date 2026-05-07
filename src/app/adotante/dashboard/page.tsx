@@ -1,5 +1,5 @@
-import { AppShell } from '@/components/layout/AppShell';
-import { DashboardCard } from '@/components/dashboard/DashboardCard';
+import { AppShell } from '../../../components/layout/AppShell';
+import { DashboardCard } from '../../../components/dashboard/DashboardCard';
 
 export default function AdotanteDashboardPage() {
   return (

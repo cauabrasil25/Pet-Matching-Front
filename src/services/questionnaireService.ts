@@ -1,5 +1,5 @@
-import { apiClient } from '@/services/apiClient';
-import type { CriarQuestionarioPerfilRequest, QuestionarioPerfilResponse } from '@/types/questionnaire';
+import { apiClient } from './apiClient';
+import type { CriarQuestionarioPerfilRequest, QuestionarioPerfilResponse } from '../types/questionnaire';
 
 export const questionnaireService = {
   buscar: () => apiClient<QuestionarioPerfilResponse>('/api/questionario-perfil'),

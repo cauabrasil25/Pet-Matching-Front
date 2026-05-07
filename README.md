@@ -1,10 +1,18 @@
 # Pet-Matching
 
-Este repositório contém a interface web do projeto Pet-Matching (Next.js).
+Este repositório contém a interface web do projeto Pet-Matching, feita com Next.js.
 
-**Pré-requisitos**
+## Estrutura do projeto
 
-- Node.js (recomendado: 18.x — o projeto foi testado com `v18.19.1`). Se você receber avisos de engine, tente atualizar para Node 20.
+- `src/app/` — Páginas e rotas do Next.js (App Router)
+- `src/components/` — Componentes React reutilizáveis (auth, dashboard, layout, pets, ui)
+- `src/services/` — Cliente HTTP tipado e serviços de negócio (animal, application, auth, questionnaire)
+- `src/types/` — Definições TypeScript (animal, application, auth, questionnaire)
+- `src/app/globals.css` — Estilos globais
+
+## Pré-requisitos
+
+- Node.js 18.x (o projeto foi validado com `v18.19.1`).
 - npm (recomendado: 9.x) ou outro gerenciador compatível.
 - Git (opcional, para clonar o repositório).
 
@@ -52,9 +60,26 @@ npm run start
 npm run lint
 ```
 
+**Arquitetura**
+
+O projeto foi refatorado para **não utilizar aliases TypeScript** (`@/...`). Todos os imports agora usam **caminhos relativos**:
+
+```typescript
+// ✅ Correto (relativo)
+import { AppShell } from '../../components/layout/AppShell';
+import type { AnimalResponse } from '../types/animal';
+
+// ❌ Evitar (alias removido)
+// import { AppShell } from '@/components/layout/AppShell';
+```
+
+Isso elimina a dependência de `baseUrl` e `paths` no `tsconfig.json`, evitando problemas de compatibilidade futura com TypeScript 7.0+.
+
 **Observações**
 
 - Os scripts disponíveis estão em [package.json](package.json).
+- O projeto não usa mais alias `@/` no TypeScript; os imports foram convertidos para caminhos relativos.
+- O build foi validado com sucesso após essa limpeza.
 - Se você modificar dependências, confirme a instalação limpa removendo `node_modules` e lockfile (`package-lock.json`) antes de rodar `npm install` novamente:
 
 ```bash

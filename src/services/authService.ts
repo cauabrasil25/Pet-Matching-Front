@@ -1,5 +1,5 @@
-import { apiClient } from '@/services/apiClient';
-import type { LoginRequest, LoginResponse, RegistrarAbrigoRequest, RegistrarAdotanteRequest, UsuarioResponse } from '@/types/auth';
+import { apiClient } from './apiClient';
+import type { LoginRequest, LoginResponse, RegistrarAbrigoRequest, RegistrarAdotanteRequest, UsuarioResponse } from '../types/auth';
 
 export const authService = {
   login: (payload: LoginRequest) => apiClient<LoginResponse>('/auth/login', {

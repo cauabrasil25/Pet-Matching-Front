@@ -1,5 +1,5 @@
-import { AppShell } from '@/components/layout/AppShell';
-import { AuthCard } from '@/components/auth/AuthCard';
+import { AppShell } from '../../components/layout/AppShell';
+import { AuthCard } from '../../components/auth/AuthCard';
 
 export default function LoginPage() {
   return (
