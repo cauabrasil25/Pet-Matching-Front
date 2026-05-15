@@ -1,52 +1,118 @@
+"use client";
+
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { useParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { AppShell } from '../../../components/layout/AppShell';
-import { getAnimalById, formatSize, formatSpecies, formatStatus } from '../../../lib/petFixtures';
+import { animalService } from '../../../services/animalService';
+import type { AnimalResponse } from '../../../types/animal';
 
-type AnimalDetailPageProps = {
-  params: {
-    id: string;
-  };
-};
+function formatLabel(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
 
-export default function AnimalDetailPage({ params }: AnimalDetailPageProps) {
-  const animal = getAnimalById(params.id);
+export default function AnimalDetailPage() {
+  const params = useParams<{ id: string }>();
+  const animalId = Array.isArray(params.id) ? params.id[0] : params.id;
 
-  if (!animal) {
-    notFound();
+  const [animal, setAnimal] = useState<AnimalResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadAnimal() {
+      if (!animalId) {
+        setError('Animal invalido.');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError('');
+        const data = await animalService.buscarPorId(animalId);
+        if (active) {
+          setAnimal(data);
+        }
+      } catch (loadError) {
+        if (active) {
+          const message = loadError instanceof Error ? loadError.message : 'Nao foi possivel carregar o animal.';
+          setError(message);
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadAnimal();
+
+    return () => {
+      active = false;
+    };
+  }, [animalId]);
+
+  if (loading) {
+    return (
+      <AppShell
+        eyebrow="Detalhe do animal"
+        title="Carregando..."
+        description="Buscando informacoes do animal no backend."
+        secondaryAction={{ label: 'Voltar ao catalogo', href: '/animais' }}
+      >
+        <section className="rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-8 text-center text-sm text-[var(--muted)] shadow-[var(--shadow)]">
+          Carregando detalhes do animal...
+        </section>
+      </AppShell>
+    );
+  }
+
+  if (error || !animal) {
+    return (
+      <AppShell
+        eyebrow="Detalhe do animal"
+        title="Animal nao encontrado"
+        description="Nao foi possivel carregar os detalhes para este cadastro."
+        secondaryAction={{ label: 'Voltar ao catalogo', href: '/animais' }}
+      >
+        <section className="rounded-[28px] border border-red-200 bg-red-50 p-8 text-center text-sm text-red-700 shadow-[var(--shadow)]">
+          {error || 'Animal nao encontrado.'}
+        </section>
+      </AppShell>
+    );
   }
 
   return (
     <AppShell
       eyebrow="Detalhe do animal"
-      title={animal.name}
+      title={animal.nome}
       description="Pagina de detalhe adaptada para a rota dinamica do Next."
       secondaryAction={{ label: 'Voltar ao catalogo', href: '/animais' }}
     >
       <section className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
         <article className="overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)]">
-          <div className="aspect-[4/3] bg-[var(--surface-2)]">
-            <img src={animal.imageUrl} alt={animal.name} className="h-full w-full object-cover" />
+          <div className="flex aspect-[4/3] items-center justify-center bg-[linear-gradient(145deg,rgba(15,118,110,0.16),rgba(217,119,6,0.16))]">
+            <span className="text-8xl font-semibold uppercase tracking-[0.08em] text-[var(--primary-strong)]">
+              {animal.nome.slice(0, 1)}
+            </span>
           </div>
 
           <div className="space-y-5 p-6">
             <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-              <span>{formatStatus(animal.status)}</span>
+              <span>{formatLabel(animal.status)}</span>
               <span>•</span>
-              <span>{formatSpecies(animal.species)}</span>
+              <span>{formatLabel(animal.especie)}</span>
               <span>•</span>
-              <span>{formatSize(animal.size)}</span>
+              <span>{formatLabel(animal.porte)}</span>
             </div>
 
-            <p className="text-sm leading-6 text-[var(--muted)]">{animal.description}</p>
-
-            <div className="flex flex-wrap gap-2">
-              {animal.temperament.map((item) => (
-                <span key={item} className="rounded-full border border-[var(--border)] bg-white px-3 py-1 text-xs font-medium text-[var(--muted)]">
-                  {item}
-                </span>
-              ))}
-            </div>
+            <p className="text-sm leading-6 text-[var(--muted)]">{animal.descricao ?? 'Sem descricao informada para este animal.'}</p>
           </div>
         </article>
 
@@ -55,20 +121,20 @@ export default function AnimalDetailPage({ params }: AnimalDetailPageProps) {
             <h2 className="text-xl font-semibold text-[var(--text)]">Informacoes principais</h2>
             <dl className="mt-5 grid gap-4 text-sm">
               <div className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--border)] pb-3">
-                <dt className="text-[var(--muted)]">Raca</dt>
-                <dd className="font-medium text-[var(--text)]">{animal.breed}</dd>
+                <dt className="text-[var(--muted)]">Especie</dt>
+                <dd className="font-medium text-[var(--text)]">{formatLabel(animal.especie)}</dd>
               </div>
               <div className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--border)] pb-3">
-                <dt className="text-[var(--muted)]">Idade</dt>
-                <dd className="font-medium text-[var(--text)]">{animal.age} anos</dd>
+                <dt className="text-[var(--muted)]">Porte</dt>
+                <dd className="font-medium text-[var(--text)]">{formatLabel(animal.porte)}</dd>
               </div>
               <div className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--border)] pb-3">
-                <dt className="text-[var(--muted)]">Abrigo</dt>
-                <dd className="font-medium text-[var(--text)]">{animal.shelter}</dd>
+                <dt className="text-[var(--muted)]">Sexo</dt>
+                <dd className="font-medium text-[var(--text)]">{formatLabel(animal.sexo)}</dd>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <dt className="text-[var(--muted)]">Energia</dt>
-                <dd className="font-medium text-[var(--text)]">{animal.nivelEnergia}</dd>
+                <dt className="text-[var(--muted)]">Status</dt>
+                <dd className="font-medium text-[var(--text)]">{formatLabel(animal.status)}</dd>
               </div>
             </dl>
           </div>

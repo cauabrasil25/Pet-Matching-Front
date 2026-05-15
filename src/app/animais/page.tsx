@@ -1,19 +1,69 @@
 "use client";
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AppShell } from '../../components/layout/AppShell';
-import { animals, formatSize, formatSpecies, formatStatus } from '../../lib/petFixtures';
+import { animalService } from '../../services/animalService';
+import type { AnimalResponse } from '../../types/animal';
+
+function formatLabel(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
 
 export default function AnimalsPage() {
+  const [animals, setAnimals] = useState<AnimalResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
-  const [species, setSpecies] = useState<'all' | 'dog' | 'cat'>('all');
-  const [size, setSize] = useState<'all' | 'small' | 'medium' | 'large'>('all');
+  const [species, setSpecies] = useState('all');
+  const [size, setSize] = useState('all');
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadAnimals() {
+      try {
+        setLoading(true);
+        setError('');
+        const data = await animalService.listar();
+        if (active) {
+          setAnimals(data);
+        }
+      } catch (loadError) {
+        if (active) {
+          const message = loadError instanceof Error ? loadError.message : 'Nao foi possivel carregar o catalogo.';
+          setError(message);
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadAnimals();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const speciesOptions = useMemo(() => {
+    return [...new Set(animals.map((animal) => animal.especie))].sort((a, b) => a.localeCompare(b));
+  }, [animals]);
+
+  const sizeOptions = useMemo(() => {
+    return [...new Set(animals.map((animal) => animal.porte))].sort((a, b) => a.localeCompare(b));
+  }, [animals]);
 
   const visibleAnimals = animals.filter((animal) => {
-    const matchesSearch = animal.name.toLowerCase().includes(search.toLowerCase()) || animal.breed.toLowerCase().includes(search.toLowerCase());
-    const matchesSpecies = species === 'all' || animal.species === species;
-    const matchesSize = size === 'all' || animal.size === size;
+    const haystack = `${animal.nome} ${animal.especie} ${animal.porte} ${animal.sexo} ${animal.descricao ?? ''}`.toLowerCase();
+    const matchesSearch = haystack.includes(search.toLowerCase());
+    const matchesSpecies = species === 'all' || animal.especie === species;
+    const matchesSize = size === 'all' || animal.porte === size;
 
     return matchesSearch && matchesSpecies && matchesSize;
   });
@@ -43,11 +93,12 @@ export default function AnimalsPage() {
             <select
               className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 outline-none transition focus:border-[var(--primary)]"
               value={species}
-              onChange={(event) => setSpecies(event.target.value as typeof species)}
+              onChange={(event) => setSpecies(event.target.value)}
             >
               <option value="all">Todas</option>
-              <option value="dog">Cachorro</option>
-              <option value="cat">Gato</option>
+              {speciesOptions.map((option) => (
+                <option key={option} value={option}>{formatLabel(option)}</option>
+              ))}
             </select>
           </label>
 
@@ -56,24 +107,38 @@ export default function AnimalsPage() {
             <select
               className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 outline-none transition focus:border-[var(--primary)]"
               value={size}
-              onChange={(event) => setSize(event.target.value as typeof size)}
+              onChange={(event) => setSize(event.target.value)}
             >
               <option value="all">Todos</option>
-              <option value="small">Pequeno</option>
-              <option value="medium">Medio</option>
-              <option value="large">Grande</option>
+              {sizeOptions.map((option) => (
+                <option key={option} value={option}>{formatLabel(option)}</option>
+              ))}
             </select>
           </label>
         </div>
       </section>
 
-      <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+      {loading ? (
+        <div className="mt-6 rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-8 text-center text-sm text-[var(--muted)] shadow-[var(--shadow)]">
+          Carregando animais...
+        </div>
+      ) : null}
+
+      {error ? (
+        <div className="mt-6 rounded-[28px] border border-red-200 bg-red-50 p-8 text-center text-sm text-red-700 shadow-[var(--shadow)]">
+          {error}
+        </div>
+      ) : null}
+
+      {!loading && !error ? <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         {visibleAnimals.map((animal) => (
           <article key={animal.id} className="overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)]">
-            <div className="relative aspect-[4/3] bg-[var(--surface-2)]">
-              <img src={animal.imageUrl} alt={animal.name} className="h-full w-full object-cover" />
+            <div className="relative flex aspect-[4/3] items-center justify-center bg-[linear-gradient(145deg,rgba(15,118,110,0.16),rgba(217,119,6,0.16))]">
+              <span className="text-6xl font-semibold uppercase tracking-[0.08em] text-[var(--primary-strong)]">
+                {animal.nome.slice(0, 1)}
+              </span>
               <div className="absolute left-4 top-4 rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-[var(--text)]">
-                {formatStatus(animal.status)}
+                {formatLabel(animal.status)}
               </div>
             </div>
 
@@ -81,20 +146,20 @@ export default function AnimalsPage() {
               <div>
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h2 className="text-xl font-semibold text-[var(--text)]">{animal.name}</h2>
-                    <p className="mt-1 text-sm text-[var(--muted)]">{formatSpecies(animal.species)} - {animal.breed}</p>
+                    <h2 className="text-xl font-semibold text-[var(--text)]">{animal.nome}</h2>
+                    <p className="mt-1 text-sm text-[var(--muted)]">{formatLabel(animal.especie)} - {formatLabel(animal.porte)}</p>
                   </div>
                   <span className="rounded-full bg-[rgba(15,118,110,0.1)] px-3 py-1 text-xs font-semibold text-[var(--primary-strong)]">
-                    {animal.age} anos
+                    {formatLabel(animal.sexo)}
                   </span>
                 </div>
-                <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{animal.description}</p>
+                <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{animal.descricao ?? 'Sem descricao informada.'}</p>
               </div>
 
               <div className="flex flex-wrap gap-2 text-xs font-medium text-[var(--muted)]">
-                <span className="rounded-full border border-[var(--border)] px-3 py-1">{formatSize(animal.size)}</span>
-                <span className="rounded-full border border-[var(--border)] px-3 py-1">{animal.shelter}</span>
-                <span className="rounded-full border border-[var(--border)] px-3 py-1">Energia {animal.nivelEnergia}</span>
+                <span className="rounded-full border border-[var(--border)] px-3 py-1">{formatLabel(animal.especie)}</span>
+                <span className="rounded-full border border-[var(--border)] px-3 py-1">{formatLabel(animal.porte)}</span>
+                <span className="rounded-full border border-[var(--border)] px-3 py-1">{formatLabel(animal.status)}</span>
               </div>
 
               <div className="flex gap-3">
@@ -114,9 +179,9 @@ export default function AnimalsPage() {
             </div>
           </article>
         ))}
-      </div>
+      </div> : null}
 
-      {visibleAnimals.length === 0 ? (
+      {!loading && !error && visibleAnimals.length === 0 ? (
         <div className="mt-6 rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-8 text-center text-sm text-[var(--muted)] shadow-[var(--shadow)]">
           Nenhum animal encontrado com esses filtros.
         </div>
