@@ -1,8 +1,74 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AppShell } from '../../../components/layout/AppShell';
-import { adopterProfile, formatProfileValue } from '../../../lib/petFixtures';
+import { questionnaireService } from '../../../services/questionnaireService';
+
+type ProfileState = {
+  tipoMoradia: 'CASA' | 'APARTAMENTO' | 'SITIO' | null;
+  nivelAtividade: 'SEDENTARIO' | 'MODERADO' | 'ATIVO' | null;
+  toleranciaBarulho: 'ALTA' | 'BAIXA' | null;
+  temCriancas: boolean | null;
+  temOutrosPets: boolean | null;
+};
+
+const defaultProfile: ProfileState = {
+  tipoMoradia: null,
+  nivelAtividade: null,
+  toleranciaBarulho: null,
+  temCriancas: null,
+  temOutrosPets: null
+};
+
+function formatProfileValue(key: keyof ProfileState, value: ProfileState[keyof ProfileState]) {
+  if (value === null) return 'Nao informado';
+
+  if (key === 'tipoMoradia') {
+    if (value === 'CASA') return 'Casa';
+    if (value === 'APARTAMENTO') return 'Apartamento';
+    return 'Sitio';
+  }
+
+  if (key === 'nivelAtividade') {
+    if (value === 'SEDENTARIO') return 'Sedentario';
+    if (value === 'MODERADO') return 'Moderado';
+    return 'Ativo';
+  }
+
+  if (key === 'toleranciaBarulho') {
+    return value === 'ALTA' ? 'Alta' : 'Baixa';
+  }
+
+  return value === true ? 'Sim' : 'Nao';
+}
+
+function toProfileState(respostas: Record<string, string | number | boolean>): ProfileState {
+  const tipoMoradia = typeof respostas.tipoMoradia === 'string' ? respostas.tipoMoradia : null;
+  const nivelAtividade = typeof respostas.nivelAtividade === 'string' ? respostas.nivelAtividade : null;
+  const toleranciaBarulho = typeof respostas.toleranciaBarulho === 'string' ? respostas.toleranciaBarulho : null;
+  const temCriancas = typeof respostas.temCriancas === 'boolean' ? respostas.temCriancas : null;
+  const temOutrosPets = typeof respostas.temOutrosPets === 'boolean' ? respostas.temOutrosPets : null;
+
+  return {
+    tipoMoradia: tipoMoradia === 'CASA' || tipoMoradia === 'APARTAMENTO' || tipoMoradia === 'SITIO' ? tipoMoradia : null,
+    nivelAtividade: nivelAtividade === 'SEDENTARIO' || nivelAtividade === 'MODERADO' || nivelAtividade === 'ATIVO' ? nivelAtividade : null,
+    toleranciaBarulho: toleranciaBarulho === 'ALTA' || toleranciaBarulho === 'BAIXA' ? toleranciaBarulho : null,
+    temCriancas,
+    temOutrosPets
+  };
+}
+
+function toRequestPayload(profile: ProfileState) {
+  return {
+    respostas: {
+      tipoMoradia: profile.tipoMoradia ?? '',
+      nivelAtividade: profile.nivelAtividade ?? '',
+      toleranciaBarulho: profile.toleranciaBarulho ?? '',
+      temCriancas: profile.temCriancas ?? false,
+      temOutrosPets: profile.temOutrosPets ?? false
+    }
+  };
+}
 
 const homeTypes = [
   { value: 'CASA', label: 'Casa' },
@@ -17,12 +83,74 @@ const activityLevels = [
 ] as const;
 
 export default function QuestionarioPage() {
-  const [profile, setProfile] = useState(adopterProfile);
+  const [profile, setProfile] = useState<ProfileState>(defaultProfile);
+  const [loading, setLoading] = useState(true);
+  const [hasExistingQuestionnaire, setHasExistingQuestionnaire] = useState(false);
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState('');
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    let active = true;
+
+    async function loadQuestionnaire() {
+      try {
+        setLoading(true);
+        setError('');
+
+        const response = await questionnaireService.buscar();
+        if (!active) return;
+
+        setProfile(toProfileState(response.respostas));
+        setHasExistingQuestionnaire(true);
+      } catch (loadError) {
+        if (!active) return;
+
+        const message = loadError instanceof Error ? loadError.message : 'Nao foi possivel carregar o questionario.';
+        const looksLikeNotFound = /404|nao encontrado|not found/i.test(message);
+
+        if (looksLikeNotFound) {
+          setProfile(defaultProfile);
+          setHasExistingQuestionnaire(false);
+        } else {
+          setError(message);
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadQuestionnaire();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setSaved('Questionario salvo para o perfil do adotante.');
+    setSaved('');
+    setError('');
+
+    try {
+      setSaving(true);
+
+      if (hasExistingQuestionnaire) {
+        await questionnaireService.atualizar(toRequestPayload(profile));
+      } else {
+        await questionnaireService.cadastrar(toRequestPayload(profile));
+        setHasExistingQuestionnaire(true);
+      }
+
+      setSaved('Questionario salvo com sucesso.');
+    } catch (submitError) {
+      const message = submitError instanceof Error ? submitError.message : 'Nao foi possivel salvar o questionario.';
+      setError(message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -32,6 +160,18 @@ export default function QuestionarioPage() {
       description="Tela de respostas do adotante reorganizada para o App Router."
       secondaryAction={{ label: 'Minhas aplicacoes', href: '/adotante/aplicacoes' }}
     >
+      {loading ? (
+        <section className="rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-8 text-center text-sm text-[var(--muted)] shadow-[var(--shadow)]">
+          Carregando questionario...
+        </section>
+      ) : null}
+
+      {error ? (
+        <section className="mb-6 rounded-[28px] border border-red-200 bg-red-50 p-6 text-sm text-red-700 shadow-[var(--shadow)]">
+          {error}
+        </section>
+      ) : null}
+
       <form className="space-y-6" onSubmit={handleSubmit}>
         <section className="grid gap-4 lg:grid-cols-2">
           <article className="rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow)]">
@@ -140,10 +280,10 @@ export default function QuestionarioPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-xl font-semibold text-[var(--text)]">Resumo atual</h2>
-              <p className="mt-1 text-sm text-[var(--muted)]">As respostas abaixo refletem o questionario editado no Next.</p>
+              <p className="mt-1 text-sm text-[var(--muted)]">As respostas abaixo refletem o questionario salvo no backend.</p>
             </div>
-            <button type="submit" className="rounded-full bg-[var(--primary)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--primary-strong)]">
-              Salvar respostas
+            <button type="submit" disabled={loading || saving} className="rounded-full bg-[var(--primary)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--primary-strong)] disabled:opacity-70">
+              {saving ? 'Salvando...' : 'Salvar respostas'}
             </button>
           </div>
 
