@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { AppShell } from '../components/layout/AppShell';
+import { authService, saveAuthSession } from '../services/authService';
 
 export default function HomePage() {
+  const router = useRouter();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [userType, setUserType] = useState<'adotante' | 'abrigo'>('adotante');
   const [name, setName] = useState('');
@@ -11,6 +14,8 @@ export default function HomePage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [submitted, setSubmitted] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const passwordRules = {
     minLength: password.length >= 8,
@@ -25,16 +30,51 @@ export default function HomePage() {
     confirmPassword === password &&
     confirmPassword.length > 0;
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setError('');
+    setSubmitted('');
+
     if (!email || !password) return;
     if (mode === 'signup' && !isSignupValid) return;
 
-    const fallbackName = email.split('@')[0] || 'usuario';
-    const displayName = name.trim() || fallbackName;
-    const accountLabel = userType === 'adotante' ? 'adotante' : 'abrigo';
+    try {
+      setLoading(true);
 
-    setSubmitted(`${mode === 'login' ? 'Login' : 'Cadastro'} pronto para ${displayName} como ${accountLabel}.`);
+      if (mode === 'login') {
+        const response = await authService.login({ email, senha: password });
+        saveAuthSession(response);
+
+        setSubmitted('Login realizado com sucesso. Redirecionando...');
+        router.push(response.user.role === 'ABRIGO' ? '/abrigo/dashboard' : '/adotante/dashboard');
+        return;
+      }
+
+      if (userType === 'adotante') {
+        await authService.registrarAdotante({
+          nome: name.trim(),
+          email,
+          senha: password
+        });
+      } else {
+        await authService.registrarAbrigo({
+          nome: name.trim(),
+          email,
+          senha: password
+        });
+      }
+
+      const response = await authService.login({ email, senha: password });
+      saveAuthSession(response);
+
+      setSubmitted('Cadastro concluido e sessao iniciada. Redirecionando...');
+      router.push(response.user.role === 'ABRIGO' ? '/abrigo/dashboard' : '/adotante/dashboard');
+    } catch (submitError) {
+      const message = submitError instanceof Error ? submitError.message : 'Nao foi possivel concluir a autenticacao.';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -167,12 +207,13 @@ export default function HomePage() {
             <button
               type="submit"
               className="w-full rounded-full bg-[var(--primary)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--primary-strong)] disabled:cursor-not-allowed disabled:opacity-70"
-              disabled={mode === 'signup' && !isSignupValid}
+              disabled={loading || (mode === 'signup' && !isSignupValid)}
             >
-              {mode === 'login' ? 'Entrar' : 'Criar conta'}
+              {loading ? 'Processando...' : mode === 'login' ? 'Entrar' : 'Criar conta'}
             </button>
           </form>
 
+          {error ? <p className="mt-4 text-sm text-red-700">{error}</p> : null}
           {submitted ? <p className="mt-4 text-sm text-[var(--primary-strong)]">{submitted}</p> : null}
         </section>
       </section>

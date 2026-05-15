@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { AppShell } from '../../components/layout/AppShell';
+import { authService, saveAuthSession } from '../../services/authService';
 
 export default function CadastroPage() {
+  const router = useRouter();
   const [accountType, setAccountType] = useState<'adotante' | 'abrigo'>('adotante');
   const [form, setForm] = useState({
     name: '',
@@ -13,6 +16,8 @@ export default function CadastroPage() {
     confirmPassword: ''
   });
   const [feedback, setFeedback] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const isValid =
     form.name.trim().length > 0 &&
@@ -20,10 +25,44 @@ export default function CadastroPage() {
     form.password.length >= 8 &&
     form.password === form.confirmPassword;
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setError('');
+    setFeedback('');
     if (!isValid) return;
-    setFeedback(`Conta de ${accountType === 'adotante' ? 'adotante' : 'abrigo'} preparada para ${form.name.trim()}.`);
+
+    try {
+      setLoading(true);
+
+      if (accountType === 'adotante') {
+        await authService.registrarAdotante({
+          nome: form.name.trim(),
+          email: form.email.trim(),
+          senha: form.password
+        });
+      } else {
+        await authService.registrarAbrigo({
+          nome: form.name.trim(),
+          email: form.email.trim(),
+          senha: form.password,
+          cnpj: form.document.trim() || undefined
+        });
+      }
+
+      const login = await authService.login({
+        email: form.email.trim(),
+        senha: form.password
+      });
+      saveAuthSession(login);
+
+      setFeedback('Conta criada com sucesso. Redirecionando...');
+      router.push(login.user.role === 'ABRIGO' ? '/abrigo/dashboard' : '/adotante/dashboard');
+    } catch (submitError) {
+      const message = submitError instanceof Error ? submitError.message : 'Nao foi possivel concluir o cadastro.';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -129,13 +168,14 @@ export default function CadastroPage() {
 
             <button
               type="submit"
-              disabled={!isValid}
+              disabled={loading || !isValid}
               className="w-full rounded-full bg-[var(--primary)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--primary-strong)] disabled:cursor-not-allowed disabled:opacity-70"
             >
-              Criar conta
+              {loading ? 'Criando conta...' : 'Criar conta'}
             </button>
           </form>
 
+          {error ? <p className="mt-4 text-sm text-red-700">{error}</p> : null}
           {feedback ? <p className="mt-4 text-sm text-[var(--primary-strong)]">{feedback}</p> : null}
         </section>
       </section>
