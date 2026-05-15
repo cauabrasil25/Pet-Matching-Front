@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { AppShell } from '../../../components/layout/AppShell';
+import { getCurrentUser } from '../../../services/authService';
+import { applicationService } from '../../../services/applicationService';
 import { animalService } from '../../../services/animalService';
 import type { AnimalResponse } from '../../../types/animal';
 
@@ -21,6 +23,16 @@ export default function AnimalDetailPage() {
   const [animal, setAnimal] = useState<AnimalResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isAdopter, setIsAdopter] = useState(false);
+  const [message, setMessage] = useState('');
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [submitSuccess, setSubmitSuccess] = useState('');
+
+  useEffect(() => {
+    const user = getCurrentUser();
+    setIsAdopter(user?.role === 'ADOTANTE');
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -88,6 +100,27 @@ export default function AnimalDetailPage() {
     );
   }
 
+  async function handleApply() {
+    try {
+      setSubmitLoading(true);
+      setSubmitError('');
+      setSubmitSuccess('');
+
+      await applicationService.criar({
+        animalId: animal.id,
+        mensagem: message.trim() || undefined
+      });
+
+      setSubmitSuccess('Aplicacao enviada com sucesso. Acompanhe em Minhas aplicacoes.');
+      setMessage('');
+    } catch (applyError) {
+      const errorMessage = applyError instanceof Error ? applyError.message : 'Nao foi possivel enviar sua aplicacao.';
+      setSubmitError(errorMessage);
+    } finally {
+      setSubmitLoading(false);
+    }
+  }
+
   return (
     <AppShell
       eyebrow="Detalhe do animal"
@@ -141,17 +174,54 @@ export default function AnimalDetailPage() {
 
           <div className="rounded-[28px] border border-[var(--border)] bg-[linear-gradient(180deg,rgba(15,118,110,0.1),rgba(255,255,255,0.92))] p-6 shadow-[var(--shadow)]">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">Proximo passo</p>
-            <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
-              Entre na plataforma para enviar uma aplicacao e acompanhar a compatibilidade deste animal.
-            </p>
-            <div className="mt-5 flex gap-3">
-              <Link href="/login" className="rounded-full bg-[var(--primary)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--primary-strong)]">
-                Entrar
-              </Link>
-              <Link href="/adotante/questionario" className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--text)] transition hover:bg-[var(--surface-2)]">
-                Questionario
-              </Link>
-            </div>
+            {isAdopter ? (
+              <>
+                <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+                  Envie sua aplicacao para este animal diretamente por aqui.
+                </p>
+
+                <label className="mt-4 block space-y-2 text-sm font-medium text-[var(--text)]">
+                  <span>Mensagem para o abrigo (opcional)</span>
+                  <textarea
+                    className="min-h-28 w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 outline-none transition focus:border-[var(--primary)]"
+                    value={message}
+                    onChange={(event) => setMessage(event.target.value)}
+                    placeholder="Conte por que voce seria um bom tutor para este animal..."
+                  />
+                </label>
+
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={handleApply}
+                    disabled={submitLoading}
+                    className="rounded-full bg-[var(--primary)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--primary-strong)] disabled:opacity-70"
+                  >
+                    {submitLoading ? 'Enviando...' : 'Enviar aplicacao'}
+                  </button>
+                  <Link href="/adotante/aplicacoes" className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--text)] transition hover:bg-[var(--surface-2)]">
+                    Minhas aplicacoes
+                  </Link>
+                </div>
+
+                {submitError ? <p className="mt-3 text-sm text-red-700">{submitError}</p> : null}
+                {submitSuccess ? <p className="mt-3 text-sm text-green-700">{submitSuccess}</p> : null}
+              </>
+            ) : (
+              <>
+                <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+                  Entre como adotante para enviar uma aplicacao e acompanhar o andamento.
+                </p>
+                <div className="mt-5 flex gap-3">
+                  <Link href="/login" className="rounded-full bg-[var(--primary)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--primary-strong)]">
+                    Entrar
+                  </Link>
+                  <Link href="/adotante/questionario" className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--text)] transition hover:bg-[var(--surface-2)]">
+                    Questionario
+                  </Link>
+                </div>
+              </>
+            )}
           </div>
         </aside>
       </section>
