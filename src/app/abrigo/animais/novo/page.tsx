@@ -1,26 +1,61 @@
 "use client";
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { AppShell } from '../../../../components/layout/AppShell';
+import { animalService } from '../../../../services/animalService';
+
+function normalizeApiValue(value: string) {
+  return value.trim().toUpperCase().replace(/\s+/g, '_');
+}
 
 export default function NovoAnimalPage() {
+  const router = useRouter();
   const [form, setForm] = useState({
-    name: '',
-    species: 'dog',
-    breed: '',
-    age: '',
-    size: 'medium',
+    nome: '',
+    especie: 'CACHORRO',
+    porte: 'MEDIO',
+    sexo: 'MACHO',
     status: 'DISPONIVEL',
-    imageUrl: '',
-    description: '',
-    nivelEnergia: 'MEDIO',
-    nivelBarulho: 'BAIXO'
+    descricao: ''
   });
   const [feedback, setFeedback] = useState('');
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setFeedback(`Animal ${form.name || 'sem nome'} preparado para cadastro.`);
+    setFeedback('');
+    setError('');
+
+    if (!form.nome.trim()) {
+      setError('Informe o nome do animal.');
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      const createdAnimal = await animalService.cadastrar({
+        nome: form.nome.trim(),
+        especie: normalizeApiValue(form.especie),
+        porte: normalizeApiValue(form.porte),
+        sexo: normalizeApiValue(form.sexo),
+        descricao: form.descricao.trim() || undefined
+      });
+
+      if (form.status !== 'DISPONIVEL') {
+        await animalService.atualizarStatus(createdAnimal.id, { status: form.status });
+      }
+
+      setFeedback(`Animal ${form.nome.trim()} cadastrado com sucesso.`);
+      router.push('/abrigo/animais');
+    } catch (submitError) {
+      const message = submitError instanceof Error ? submitError.message : 'Nao foi possivel cadastrar o animal.';
+      setError(message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -36,8 +71,8 @@ export default function NovoAnimalPage() {
             <span>Nome</span>
             <input
               className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 outline-none transition focus:border-[var(--primary)]"
-              value={form.name}
-              onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+              value={form.nome}
+              onChange={(event) => setForm((current) => ({ ...current, nome: event.target.value }))}
               placeholder="Ex: Rex"
             />
           </label>
@@ -46,45 +81,36 @@ export default function NovoAnimalPage() {
             <span>Especie</span>
             <select
               className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 outline-none transition focus:border-[var(--primary)]"
-              value={form.species}
-              onChange={(event) => setForm((current) => ({ ...current, species: event.target.value }))}
+              value={form.especie}
+              onChange={(event) => setForm((current) => ({ ...current, especie: event.target.value }))}
             >
-              <option value="dog">Cachorro</option>
-              <option value="cat">Gato</option>
+              <option value="CACHORRO">Cachorro</option>
+              <option value="GATO">Gato</option>
             </select>
           </label>
 
           <label className="block space-y-2 text-sm font-medium text-[var(--text)]">
-            <span>Raca</span>
-            <input
-              className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 outline-none transition focus:border-[var(--primary)]"
-              value={form.breed}
-              onChange={(event) => setForm((current) => ({ ...current, breed: event.target.value }))}
-              placeholder="Ex: Vira-lata"
-            />
-          </label>
-
-          <label className="block space-y-2 text-sm font-medium text-[var(--text)]">
-            <span>Idade</span>
-            <input
-              className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 outline-none transition focus:border-[var(--primary)]"
-              type="number"
-              value={form.age}
-              onChange={(event) => setForm((current) => ({ ...current, age: event.target.value }))}
-              placeholder="Ex: 3"
-            />
-          </label>
-
-          <label className="block space-y-2 text-sm font-medium text-[var(--text)]">
-            <span>Tamanho</span>
+            <span>Porte</span>
             <select
               className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 outline-none transition focus:border-[var(--primary)]"
-              value={form.size}
-              onChange={(event) => setForm((current) => ({ ...current, size: event.target.value }))}
+              value={form.porte}
+              onChange={(event) => setForm((current) => ({ ...current, porte: event.target.value }))}
             >
-              <option value="small">Pequeno</option>
-              <option value="medium">Medio</option>
-              <option value="large">Grande</option>
+              <option value="PEQUENO">Pequeno</option>
+              <option value="MEDIO">Medio</option>
+              <option value="GRANDE">Grande</option>
+            </select>
+          </label>
+
+          <label className="block space-y-2 text-sm font-medium text-[var(--text)]">
+            <span>Sexo</span>
+            <select
+              className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 outline-none transition focus:border-[var(--primary)]"
+              value={form.sexo}
+              onChange={(event) => setForm((current) => ({ ...current, sexo: event.target.value }))}
+            >
+              <option value="MACHO">Macho</option>
+              <option value="FEMEA">Femea</option>
             </select>
           </label>
 
@@ -100,64 +126,28 @@ export default function NovoAnimalPage() {
               <option value="ADOTADO">Adotado</option>
             </select>
           </label>
-
-          <label className="block space-y-2 text-sm font-medium text-[var(--text)]">
-            <span>Imagem</span>
-            <input
-              className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 outline-none transition focus:border-[var(--primary)]"
-              value={form.imageUrl}
-              onChange={(event) => setForm((current) => ({ ...current, imageUrl: event.target.value }))}
-              placeholder="https://..."
-            />
-          </label>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <label className="block space-y-2 text-sm font-medium text-[var(--text)]">
-            <span>Nivel de energia</span>
-            <select
-              className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 outline-none transition focus:border-[var(--primary)]"
-              value={form.nivelEnergia}
-              onChange={(event) => setForm((current) => ({ ...current, nivelEnergia: event.target.value }))}
-            >
-              <option value="BAIXO">Baixo</option>
-              <option value="MEDIO">Medio</option>
-              <option value="ALTO">Alto</option>
-            </select>
-          </label>
-
-          <label className="block space-y-2 text-sm font-medium text-[var(--text)]">
-            <span>Nivel de barulho</span>
-            <select
-              className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 outline-none transition focus:border-[var(--primary)]"
-              value={form.nivelBarulho}
-              onChange={(event) => setForm((current) => ({ ...current, nivelBarulho: event.target.value }))}
-            >
-              <option value="BAIXO">Baixo</option>
-              <option value="ALTO">Alto</option>
-            </select>
-          </label>
         </div>
 
         <label className="block space-y-2 text-sm font-medium text-[var(--text)]">
           <span>Descricao</span>
           <textarea
             className="min-h-32 w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 outline-none transition focus:border-[var(--primary)]"
-            value={form.description}
-            onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
+            value={form.descricao}
+            onChange={(event) => setForm((current) => ({ ...current, descricao: event.target.value }))}
             placeholder="Conte mais sobre o pet..."
           />
         </label>
 
         <div className="flex gap-3">
-          <button type="submit" className="rounded-full bg-[var(--primary)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--primary-strong)]">
-            Salvar animal
+          <button type="submit" disabled={saving} className="rounded-full bg-[var(--primary)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--primary-strong)] disabled:opacity-70">
+            {saving ? 'Salvando...' : 'Salvar animal'}
           </button>
-          <button type="button" className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--text)] transition hover:bg-[var(--surface-2)]">
+          <button type="button" onClick={() => router.push('/abrigo/animais')} className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--text)] transition hover:bg-[var(--surface-2)]">
             Cancelar
           </button>
         </div>
 
+        {error ? <p className="text-sm text-red-700">{error}</p> : null}
         {feedback ? <p className="text-sm text-[var(--primary-strong)]">{feedback}</p> : null}
       </form>
     </AppShell>

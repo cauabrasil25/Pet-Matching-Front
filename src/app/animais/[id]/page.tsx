@@ -101,6 +101,11 @@ export default function AnimalDetailPage() {
   }
 
   async function handleApply() {
+    if (!animal) {
+      setSubmitError('Animal indisponivel para aplicacao neste momento.');
+      return;
+    }
+
     try {
       setSubmitLoading(true);
       setSubmitError('');
