@@ -13,6 +13,8 @@ export default function HomePage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [cpf, setCpf] = useState('');
+  const [cnpj, setCnpj] = useState('');
   const [submitted, setSubmitted] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -24,6 +26,8 @@ export default function HomePage() {
   };
 
   const isSignupValid =
+    name.trim().length > 0 &&
+    (userType === 'adotante' ? cpf.trim().length > 0 : cnpj.trim().length > 0) &&
     passwordRules.minLength &&
     passwordRules.hasNumber &&
     passwordRules.hasSpecialChar &&
@@ -46,7 +50,8 @@ export default function HomePage() {
         saveAuthSession(response);
 
         setSubmitted('Login realizado com sucesso. Redirecionando...');
-        router.push(response.user.role === 'ABRIGO' ? '/abrigo/dashboard' : '/adotante/dashboard');
+        const role = response?.user?.role ?? 'ADOTANTE';
+        router.push(role === 'ABRIGO' ? '/abrigo/dashboard' : '/adotante/dashboard');
         return;
       }
 
@@ -54,13 +59,15 @@ export default function HomePage() {
         await authService.registrarAdotante({
           nome: name.trim(),
           email,
-          senha: password
+          senha: password,
+          cpf: cpf.trim()
         });
       } else {
         await authService.registrarAbrigo({
           nome: name.trim(),
           email,
-          senha: password
+          senha: password,
+          cnpj: cnpj.trim()
         });
       }
 
@@ -68,7 +75,8 @@ export default function HomePage() {
       saveAuthSession(response);
 
       setSubmitted('Cadastro concluido e sessao iniciada. Redirecionando...');
-      router.push(response.user.role === 'ABRIGO' ? '/abrigo/dashboard' : '/adotante/dashboard');
+      const role = response?.user?.role ?? 'ADOTANTE';
+      router.push(role === 'ABRIGO' ? '/abrigo/dashboard' : '/adotante/dashboard');
     } catch (submitError) {
       const message = submitError instanceof Error ? submitError.message : 'Nao foi possivel concluir a autenticacao.';
       setError(message);
@@ -153,6 +161,30 @@ export default function HomePage() {
                   value={name}
                   onChange={(event) => setName(event.target.value)}
                   placeholder={userType === 'adotante' ? 'Digite seu nome' : 'Digite o nome do abrigo'}
+                />
+              </label>
+            ) : null}
+
+            {mode === 'signup' && userType === 'adotante' ? (
+              <label className="block space-y-2 text-sm font-medium text-[var(--text)]">
+                <span>CPF</span>
+                <input
+                  className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 outline-none transition focus:border-[var(--primary)]"
+                  value={cpf}
+                  onChange={(event) => setCpf(event.target.value)}
+                  placeholder="000.000.000-00"
+                />
+              </label>
+            ) : null}
+
+            {mode === 'signup' && userType === 'abrigo' ? (
+              <label className="block space-y-2 text-sm font-medium text-[var(--text)]">
+                <span>CNPJ</span>
+                <input
+                  className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 outline-none transition focus:border-[var(--primary)]"
+                  value={cnpj}
+                  onChange={(event) => setCnpj(event.target.value)}
+                  placeholder="00.000.000/0000-00"
                 />
               </label>
             ) : null}

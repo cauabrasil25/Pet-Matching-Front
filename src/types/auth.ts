@@ -13,13 +13,14 @@ export type RegistrarAdotanteRequest = {
   nome: string;
   email: string;
   senha: string;
+  cpf: string;
 };
 
 export type RegistrarAbrigoRequest = {
   nome: string;
   email: string;
   senha: string;
-  cnpj?: string;
+  cnpj: string;
 };
 
 export type UsuarioResponse = {

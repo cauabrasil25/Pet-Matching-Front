@@ -1,4 +1,5 @@
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
+// Use /api for internal proxy routing. Next.js will rewrite this to the actual backend URL
+const apiUrl = '/api';
 
 function getAuthToken() {
   if (typeof window === 'undefined') {
