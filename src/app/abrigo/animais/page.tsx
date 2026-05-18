@@ -232,8 +232,7 @@ export default function AbrigoAnimaisPage() {
                       </div>
 
                       <p className="mt-4 line-clamp-3 text-sm leading-7 text-[var(--muted)]">
-                        {animal.descricaoSaude ??
-                          'Nenhuma descricao cadastrada para este animal.'}
+                        Animal cadastrado para adoção com informações completas no cadastro.
                       </p>
                     </div>
 

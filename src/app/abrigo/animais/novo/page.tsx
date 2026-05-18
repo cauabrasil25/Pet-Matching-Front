@@ -22,7 +22,6 @@ export default function NovoAnimalPage() {
     nivelBarulho: 'BAIXO',
     temDeficienciaFisica: false,
     temDoencaCronica: false,
-    descricaoSaude: '',
     sociavelEstranhos: true,
     sociavelCriancas: true,
     sociavelAnimais: true,
@@ -68,7 +67,6 @@ export default function NovoAnimalPage() {
         nivelBarulho: normalizeApiValue(form.nivelBarulho) as 'BAIXO' | 'ALTO',
         temDeficienciaFisica: form.temDeficienciaFisica,
         temDoencaCronica: form.temDoencaCronica,
-        descricaoSaude: form.descricaoSaude.trim() || undefined,
         sociavelEstranhos: form.sociavelEstranhos,
         sociavelCriancas: form.sociavelCriancas,
         sociavelAnimais: form.sociavelAnimais,
@@ -213,16 +211,6 @@ export default function NovoAnimalPage() {
               <option value="false">Nao</option>
               <option value="true">Sim</option>
             </select>
-          </label>
-
-          <label className="md:col-span-2 block space-y-2 text-sm font-medium text-[var(--text)]">
-            <span>Descrição de saúde</span>
-            <textarea
-              className="min-h-28 w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 outline-none transition focus:border-[var(--primary)]"
-              value={form.descricaoSaude}
-              onChange={(event) => setForm((current) => ({ ...current, descricaoSaude: event.target.value }))}
-              placeholder="Ex: vacinado, castrado, sem restrições especiais..."
-            />
           </label>
 
           <label className="block space-y-2 text-sm font-medium text-[var(--text)]">
