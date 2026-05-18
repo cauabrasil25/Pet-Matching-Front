@@ -1,5 +1,5 @@
 import { apiClient } from './apiClient';
-import type { AnimalFiltroRequest, AnimalResponse, CriarAnimalRequest, AtualizarAnimalRequest, AtualizarStatusAnimalRequest } from '../types/animal';
+import type { AnimalFiltroRequest, AnimalResponse, CriarAnimalRequest, AtualizarAnimalRequest, AtualizarStatusAnimalRequest, AnimalMatchResponse } from '../types/animal';
 
 export const animalService = {
   listar: (filtro?: AnimalFiltroRequest) => {
@@ -12,6 +12,7 @@ export const animalService = {
     const suffix = params.toString() ? `?${params.toString()}` : '';
     return apiClient<AnimalResponse[]>(`/api/animais${suffix}`);
   },
+  listarComMatching: () => apiClient<AnimalMatchResponse[]>('/api/matching/animais'),
   buscarPorId: (id: string) => apiClient<AnimalResponse>(`/api/animais/${id}`),
   cadastrar: (payload: CriarAnimalRequest) => apiClient<AnimalResponse>('/api/animais', {
     method: 'POST',

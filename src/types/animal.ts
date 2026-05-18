@@ -52,3 +52,10 @@ export type AtualizarAnimalRequest = CriarAnimalRequest;
 export type AtualizarStatusAnimalRequest = {
   status: AnimalStatus;
 };
+
+export type AnimalMatchResponse = {
+  animal: AnimalResponse;
+  score: number;
+  chanceRetorno: number;
+  explicacoes: string[];
+};

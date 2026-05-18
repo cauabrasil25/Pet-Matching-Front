@@ -4,7 +4,13 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { AppShell } from '../../components/layout/AppShell';
 import { animalService } from '../../services/animalService';
-import type { AnimalResponse } from '../../types/animal';
+import type { AnimalResponse, AnimalMatchResponse } from '../../types/animal';
+
+function getCurrentUser() {
+  if (typeof window === 'undefined') return null;
+  const user = window.localStorage.getItem('pm_user');
+  return user ? JSON.parse(user) : null;
+}
 
 function formatLabel(value?: string | null) {
   if (!value) return 'Nao informado';
@@ -19,13 +25,21 @@ function formatBoolean(value?: boolean) {
   return value ? 'Sim' : 'Nao';
 }
 
+type AnimalWithScore = {
+  animal: AnimalResponse;
+  score?: number;
+  chanceRetorno?: number;
+  explicacoes?: string[];
+};
+
 export default function AnimalsPage() {
-  const [animals, setAnimals] = useState<AnimalResponse[]>([]);
+  const [animalsWithScore, setAnimalsWithScore] = useState<AnimalWithScore[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [species, setSpecies] = useState('all');
   const [size, setSize] = useState('all');
+  const currentUser = getCurrentUser();
 
   useEffect(() => {
     let active = true;
@@ -34,9 +48,26 @@ export default function AnimalsPage() {
       try {
         setLoading(true);
         setError('');
-        const data = await animalService.listar();
-        if (active) {
-          setAnimals(data);
+        
+        // If user is logged in and is an adopter, use matching endpoint
+        if (currentUser?.role === 'ADOTANTE') {
+          const matchData = await animalService.listarComMatching();
+          if (active) {
+            setAnimalsWithScore(
+              matchData.map(m => ({
+                animal: m.animal,
+                score: m.score,
+                chanceRetorno: m.chanceRetorno,
+                explicacoes: m.explicacoes
+              }))
+            );
+          }
+        } else {
+          // Otherwise, get public catalog
+          const data = await animalService.listar();
+          if (active) {
+            setAnimalsWithScore(data.map(animal => ({ animal })));
+          }
         }
       } catch (loadError) {
         if (active) {
@@ -55,17 +86,18 @@ export default function AnimalsPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [currentUser?.role]);
 
   const speciesOptions = useMemo(() => {
-    return [...new Set(animals.map((animal) => animal.especie))].sort((a, b) => a.localeCompare(b));
-  }, [animals]);
+    return [...new Set(animalsWithScore.map((a) => a.animal.especie))].sort((a, b) => a.localeCompare(b));
+  }, [animalsWithScore]);
 
   const sizeOptions = useMemo(() => {
-    return [...new Set(animals.map((animal) => animal.porte))].sort((a, b) => a.localeCompare(b));
-  }, [animals]);
+    return [...new Set(animalsWithScore.map((a) => a.animal.porte))].sort((a, b) => a.localeCompare(b));
+  }, [animalsWithScore]);
 
-  const visibleAnimals = animals.filter((animal) => {
+  const visibleAnimals = animalsWithScore.filter((item) => {
+    const animal = item.animal;
     const haystack = `${animal.nome} ${animal.especie} ${animal.porte} ${animal.nivelEnergia ?? ''} ${animal.nivelBarulho ?? ''} ${animal.descricaoSaude ?? ''}`.toLowerCase();
     const matchesSearch = haystack.includes(search.toLowerCase());
     const matchesSpecies = species === 'all' || animal.especie === species;
@@ -137,15 +169,22 @@ export default function AnimalsPage() {
       ) : null}
 
       {!loading && !error ? <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {visibleAnimals.map((animal) => (
+        {visibleAnimals.map((item) => {
+          const animal = item.animal;
+          return (
           <article key={animal.id} className="overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)]">
-            <div className="relative flex aspect-[4/3] items-center justify-center bg-[linear-gradient(145deg,rgba(15,118,110,0.16),rgba(217,119,6,0.16))]">
+            <div className="relative flex aspect-[4/3] items-center justify-center bg-[linear-gradient(145deg,rgba(15,118,110,0.16),rgba(217,119,6,0.16)]">
               <span className="text-6xl font-semibold uppercase tracking-[0.08em] text-[var(--primary-strong)]">
                 {animal.nome.slice(0, 1)}
               </span>
               <div className="absolute left-4 top-4 rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-[var(--text)]">
                 {formatLabel(animal.status)}
               </div>
+              {item.score !== undefined && (
+                <div className="absolute right-4 top-4 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                  Match: {item.score}%
+                </div>
+              )}
             </div>
 
             <div className="space-y-4 p-6">
@@ -168,6 +207,11 @@ export default function AnimalsPage() {
                 {animal.descricaoSaude ? (
                   <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Saude: {animal.descricaoSaude}</p>
                 ) : null}
+                {item.score !== undefined && item.chanceRetorno !== undefined && (
+                  <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+                    Compatibilidade: {item.score}% • Chance de retorno: {item.chanceRetorno}%
+                  </p>
+                )}
               </div>
 
               <div className="flex flex-wrap gap-2 text-xs font-medium text-[var(--muted)]">
@@ -186,7 +230,7 @@ export default function AnimalsPage() {
                   Ver detalhe
                 </Link>
                 <Link
-                  href="/login"
+                  href={currentUser ? `/animais/${animal.id}` : "/login"}
                   className="rounded-full bg-[var(--primary)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--primary-strong)]"
                 >
                   Aplicar
@@ -194,7 +238,8 @@ export default function AnimalsPage() {
               </div>
             </div>
           </article>
-        ))}
+          );
+        })}
       </div> : null}
 
       {!loading && !error && visibleAnimals.length === 0 ? (
