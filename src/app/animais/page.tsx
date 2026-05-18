@@ -154,8 +154,7 @@ export default function AnimalsPage() {
         ${animal.especie}
         ${animal.porte}
         ${animal.nivelEnergia ?? ""}
-        ${animal.nivelBarulho ?? ""}
-        ${animal.descricaoSaude ?? ""}`.toLowerCase();
+        ${animal.nivelBarulho ?? ""}`.toLowerCase();
 
       const matchesSearch =
         haystack.includes(search.toLowerCase());
@@ -397,11 +396,6 @@ export default function AnimalsPage() {
                         </p>
                       </div>
 
-                      {animal.descricaoSaude && (
-                        <div className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                          Saúde OK
-                        </div>
-                      )}
                     </div>
 
                     <p className="mt-4 text-sm leading-7 text-zinc-600">

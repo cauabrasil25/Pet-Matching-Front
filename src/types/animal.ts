@@ -18,7 +18,6 @@ export type AnimalResponse = {
   porte: string;
   idade: number;
   peso: number;
-  descricaoSaude?: string;
   status: AnimalStatus;
   nivelEnergia?: NivelEnergia;
   nivelBarulho?: NivelBarulho;

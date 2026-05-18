@@ -308,8 +308,7 @@ export default function AnimalDetailPage() {
             </h1>
 
             <p className="mt-5 text-base leading-8 text-zinc-600">
-              {animal.descricaoSaude ??
-                "Este pet está saudável e pronto para encontrar um novo lar cheio de carinho."}
+              Este pet está pronto para encontrar um novo lar cheio de carinho.
             </p>
 
             {/* INFO GRID */}
