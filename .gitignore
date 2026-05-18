@@ -3,3 +3,4 @@ node_modules
 dist
 .env
 .env.local
+PASSO7_VALIDATION_REPORT.md
