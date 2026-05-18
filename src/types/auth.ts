@@ -5,7 +5,6 @@ export type LoginRequest = {
 
 export type LoginResponse = {
   token: string;
-  type: string;
   user: UsuarioResponse;
 };
 
@@ -25,7 +24,7 @@ export type RegistrarAbrigoRequest = {
 
 export type UsuarioResponse = {
   id: string;
-  nome: string;
   email: string;
   role: 'ADOTANTE' | 'ABRIGO';
+  dataCriacao: string;
 };

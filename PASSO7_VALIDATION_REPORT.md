@@ -28,7 +28,9 @@ A integração técnica do frontend Next.js com o backend REST API foi **100% co
 2. **Criação de Animal** - Retorna erro 500 no backend (erro interno do servidor)
    - **Causa**: Problema no backend, não no frontend
    - **Status**: Frontend envia requisição corretamente via proxy
-3. **Validação de CPF/CNPJ** - Backend requeria estes campos, frontend não capturava
+3. **Questionário do Adotante** - GET/POST continuam falhando no backend (500/400)
+  - **Status**: O frontend carrega a tela e envia os campos, mas a API falha ao persistir/consultar
+4. **Validação de CPF/CNPJ** - Backend requeria estes campos, frontend não capturava
    - ✅ CORRIGIDO: Campos adicionados ao formulário de cadastro
 
 ---
@@ -161,11 +163,26 @@ rewrites: async () => {
   }
   ```
 - **Resposta**: HTTP 500 - "Erro interno do servidor"
+- **Resposta detalhada**: `requestId = 7b33bfc2-617c-4514-96c3-a49a61feb247`
 - **Diagnóstico**: Erro no backend, não no frontend
   - ✅ Frontend envia requisição corretamente
   - ✅ Proxy reverso está funcionando
   - ❌ Backend tem problema ao processar
 - **Ação Requerida**: Verificar logs do backend para erro 500
+
+#### Reexecução da validação
+- **Resultado repetido**: o mesmo fluxo voltou a falhar com HTTP 500
+- **Resposta detalhada mais recente**: `requestId = 31fc6d9c-0c26-4f84-9d01-9319734d9770`
+- **Conclusão**: o problema do backend permanece reproduzível na revalidação
+
+### Fase 6: Teste de Questionário
+
+#### ❌ Questionário do Adotante (`/adotante/questionario`)
+- **Comportamento Observado**:
+  - GET `/questionario` retornou HTTP 500
+  - POST para salvar respostas retornou HTTP 400 "Erro de validação"
+- **Status**: O frontend carregou a tela e permitiu edição das respostas, mas a API não persistiu os dados
+- **Ação Requerida**: Corrigir o contrato/validação do backend e revisar os logs do endpoint
 
 ---
 
@@ -216,6 +233,7 @@ rewrites: async () => {
 | Filtros Animais | Por espécie/tamanho | ✅ PASSOU | Componentes renderizam |
 | **Gerenciamento** | | | |
 | Criar Animal | POST /animais | ❌ FALHOU | Erro 500 no backend |
+| Questionário | GET/POST /questionario | ❌ FALHOU | 500 ao consultar, 400 ao salvar |
 | **Navegação** | | | |
 | Links de Rota | Navegação entre páginas | ✅ PASSOU | Redirecionamentos corretos |
 | URL Tracking | Histórico do navegador | ✅ PASSOU | URLs corretas |
@@ -258,6 +276,11 @@ rewrites: async () => {
 - **Causa**: Erro interno no servidor backend
 - **Status**: Requer investigação no backend
 - **Frontend**: Envia requisição corretamente ✅
+
+### 5. Questionário Não Persiste ❌ PROBLEMA NO BACKEND
+- **Problema**: GET /questionario retorna 500 e salvar respostas retorna 400
+- **Causa**: Falha de contrato/validação/persistência no backend
+- **Status**: Requer revisão do endpoint e dos logs de erro
 
 ---
 

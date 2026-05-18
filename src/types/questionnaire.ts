@@ -1,9 +1,19 @@
 export type CriarQuestionarioPerfilRequest = {
-  respostas: Record<string, string | number | boolean>;
+  tipoMoradia: 'CASA' | 'APARTAMENTO' | 'SITIO';
+  temCriancas: boolean;
+  temOutrosPets: boolean;
+  horasSozinhoAnimal: number;
+  nivelAtividade: 'SEDENTARIO' | 'MODERADO' | 'ATIVO';
+  toleranciaBarulho: 'ALTA' | 'BAIXA';
 };
 
 export type QuestionarioPerfilResponse = {
   id: string;
   adotanteId: string;
-  respostas: Record<string, string | number | boolean>;
+  tipoMoradia: 'CASA' | 'APARTAMENTO' | 'SITIO';
+  temCriancas: boolean;
+  temOutrosPets: boolean;
+  horasSozinhoAnimal: number;
+  nivelAtividade: 'SEDENTARIO' | 'MODERADO' | 'ATIVO';
+  toleranciaBarulho: 'ALTA' | 'BAIXA';
 };

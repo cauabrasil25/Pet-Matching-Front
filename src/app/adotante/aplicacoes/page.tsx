@@ -1,12 +1,10 @@
 "use client";
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AppShell } from '../../../components/layout/AppShell';
 import { applicationService } from '../../../services/applicationService';
-import { animalService } from '../../../services/animalService';
 import type { AplicacaoAdocaoResponse, StatusAplicacao } from '../../../types/application';
-import type { AnimalResponse } from '../../../types/animal';
 
 function formatApplicationStatus(status: StatusAplicacao) {
   if (status === 'APROVADA') return 'Aprovada';
@@ -22,7 +20,6 @@ function statusClassName(status: StatusAplicacao) {
 
 export default function MinhasAplicacoesPage() {
   const [applications, setApplications] = useState<AplicacaoAdocaoResponse[]>([]);
-  const [animals, setAnimals] = useState<AnimalResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -34,14 +31,10 @@ export default function MinhasAplicacoesPage() {
         setLoading(true);
         setError('');
 
-        const [applicationsData, animalsData] = await Promise.all([
-          applicationService.listarMinhas(),
-          animalService.listar()
-        ]);
+        const applicationsData = await applicationService.listarMinhas();
 
         if (active) {
           setApplications(applicationsData);
-          setAnimals(animalsData);
         }
       } catch (loadError) {
         if (active) {
@@ -61,10 +54,6 @@ export default function MinhasAplicacoesPage() {
       active = false;
     };
   }, []);
-
-  const animalById = useMemo(() => {
-    return new Map(animals.map((animal) => [animal.id, animal]));
-  }, [animals]);
 
   const approvedCount = applications.filter((application) => application.status === 'APROVADA').length;
   const pendingCount = applications.filter((application) => application.status === 'PENDENTE').length;
@@ -105,20 +94,27 @@ export default function MinhasAplicacoesPage() {
 
       {!loading && !error ? <div className="mt-6 space-y-4 rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow)]">
         {applications.map((application) => {
-          const animal = animalById.get(application.animalId);
-
           return (
             <article key={application.id} className="rounded-2xl border border-[var(--border)] bg-white p-5">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-[var(--text)]">{animal?.nome ?? `Animal ${application.animalId}`}</h2>
-                  <p className="mt-1 text-sm text-[var(--muted)]">Aplicacao #{application.id}</p>
+                  <h2 className="text-lg font-semibold text-[var(--text)]">{application.animalNome}</h2>
+                  <p className="mt-1 text-sm text-[var(--muted)]">{application.abrigoNome} • Aplicacao #{application.id}</p>
                 </div>
                 <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClassName(application.status)}`}>
                   {formatApplicationStatus(application.status)}
                 </span>
               </div>
-              <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{application.mensagem ?? 'Sem mensagem enviada nesta aplicacao.'}</p>
+              <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+                Compatibilidade: {application.scoreMatch}% • Chance de retorno: {application.chanceRetorno}%
+              </p>
+              {application.motivosCompatibilidade.length > 0 ? (
+                <ul className="mt-3 space-y-1 text-sm text-[var(--muted)]">
+                  {application.motivosCompatibilidade.slice(0, 3).map((motivo) => (
+                    <li key={motivo}>• {motivo}</li>
+                  ))}
+                </ul>
+              ) : null}
               <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
                 <span className="text-[var(--muted)]">Status atual: {formatApplicationStatus(application.status)}</span>
                 <Link href={`/animais/${application.animalId}`} className="font-semibold text-[var(--primary-strong)]">

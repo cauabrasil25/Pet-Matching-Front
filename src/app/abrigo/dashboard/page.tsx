@@ -9,7 +9,9 @@ import { applicationService } from '../../../services/applicationService';
 import type { AnimalResponse } from '../../../types/animal';
 import type { AplicacaoAdocaoResponse, StatusAplicacao } from '../../../types/application';
 
-function formatLabel(value: string) {
+function formatLabel(value?: string | null) {
+  if (!value) return 'Nao informado';
+
   return value
     .toLowerCase()
     .replace(/_/g, ' ')
@@ -170,7 +172,6 @@ export default function AbrigoDashboardPage() {
                     <p className="mt-1 text-sm text-[var(--muted)]">{formatLabel(animal.especie)} - {formatLabel(animal.porte)}</p>
                   </div>
                   <div className="flex flex-wrap gap-2 text-xs font-medium text-[var(--muted)]">
-                    <span className="rounded-full border border-[var(--border)] px-3 py-1">{formatLabel(animal.sexo)}</span>
                     <span className="rounded-full border border-[var(--border)] px-3 py-1">{formatLabel(animal.status)}</span>
                   </div>
                   <Link href={`/abrigo/animais/${animal.id}/editar`} className="inline-flex rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--text)] transition hover:bg-[var(--surface-2)]">
@@ -188,19 +189,21 @@ export default function AbrigoDashboardPage() {
           <h2 className="text-xl font-semibold text-[var(--text)]">Aplicacoes recentes</h2>
           <div className="mt-5 space-y-4">
             {applicationItems.map((application) => {
-              const animal = animalById.get(application.animalId);
-
               return (
                 <article key={application.id} className="rounded-2xl border border-[var(--border)] bg-white p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <h3 className="font-semibold text-[var(--text)]">Aplicacao #{application.id} - {animal?.nome ?? `Animal ${application.animalId}`}</h3>
-                      <p className="mt-1 text-sm text-[var(--muted)]">{application.mensagem ?? 'Sem mensagem enviada.'}</p>
+                      <h3 className="font-semibold text-[var(--text)]">Aplicacao #{application.id} - {application.animalNome}</h3>
+                      <p className="mt-1 text-sm text-[var(--muted)]">{application.adotanteNome}</p>
                     </div>
                     <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClassName(application.status)}`}>
                       {formatApplicationStatus(application.status)}
                     </span>
                   </div>
+
+                  <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+                    Compatibilidade: {application.scoreMatch}% • Chance de retorno: {application.chanceRetorno}%
+                  </p>
 
                   {application.status === 'PENDENTE' ? (
                     <div className="mt-4 flex gap-2">

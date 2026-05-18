@@ -9,11 +9,17 @@ import { applicationService } from '../../../services/applicationService';
 import { animalService } from '../../../services/animalService';
 import type { AnimalResponse } from '../../../types/animal';
 
-function formatLabel(value: string) {
+function formatLabel(value?: string | null) {
+  if (!value) return 'Nao informado';
+
   return value
     .toLowerCase()
     .replace(/_/g, ' ')
     .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function formatBoolean(value?: boolean) {
+  return value ? 'Sim' : 'Nao';
 }
 
 export default function AnimalDetailPage() {
@@ -24,7 +30,6 @@ export default function AnimalDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isAdopter, setIsAdopter] = useState(false);
-  const [message, setMessage] = useState('');
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState('');
@@ -112,12 +117,10 @@ export default function AnimalDetailPage() {
       setSubmitSuccess('');
 
       await applicationService.criar({
-        animalId: animal.id,
-        mensagem: message.trim() || undefined
+        animalId: animal.id
       });
 
       setSubmitSuccess('Aplicacao enviada com sucesso. Acompanhe em Minhas aplicacoes.');
-      setMessage('');
     } catch (applyError) {
       const errorMessage = applyError instanceof Error ? applyError.message : 'Nao foi possivel enviar sua aplicacao.';
       setSubmitError(errorMessage);
@@ -150,7 +153,9 @@ export default function AnimalDetailPage() {
               <span>{formatLabel(animal.porte)}</span>
             </div>
 
-            <p className="text-sm leading-6 text-[var(--muted)]">{animal.descricao ?? 'Sem descricao informada para este animal.'}</p>
+            <p className="text-sm leading-6 text-[var(--muted)]">
+              {animal.descricaoSaude ?? 'Sem observacoes adicionais de saude para este animal.'}
+            </p>
           </div>
         </article>
 
@@ -167,8 +172,40 @@ export default function AnimalDetailPage() {
                 <dd className="font-medium text-[var(--text)]">{formatLabel(animal.porte)}</dd>
               </div>
               <div className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--border)] pb-3">
-                <dt className="text-[var(--muted)]">Sexo</dt>
-                <dd className="font-medium text-[var(--text)]">{formatLabel(animal.sexo)}</dd>
+                <dt className="text-[var(--muted)]">Idade</dt>
+                <dd className="font-medium text-[var(--text)]">{animal.idade} anos</dd>
+              </div>
+              <div className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--border)] pb-3">
+                <dt className="text-[var(--muted)]">Peso</dt>
+                <dd className="font-medium text-[var(--text)]">{animal.peso.toFixed(1)} kg</dd>
+              </div>
+              <div className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--border)] pb-3">
+                <dt className="text-[var(--muted)]">Nivel de energia</dt>
+                <dd className="font-medium text-[var(--text)]">{formatLabel(animal.nivelEnergia ?? 'MEDIO')}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--border)] pb-3">
+                <dt className="text-[var(--muted)]">Nivel de barulho</dt>
+                <dd className="font-medium text-[var(--text)]">{formatLabel(animal.nivelBarulho ?? 'BAIXO')}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--border)] pb-3">
+                <dt className="text-[var(--muted)]">Sociavel com estranhos</dt>
+                <dd className="font-medium text-[var(--text)]">{formatBoolean(animal.sociavelEstranhos)}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--border)] pb-3">
+                <dt className="text-[var(--muted)]">Sociavel com criancas</dt>
+                <dd className="font-medium text-[var(--text)]">{formatBoolean(animal.sociavelCriancas)}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--border)] pb-3">
+                <dt className="text-[var(--muted)]">Sociavel com animais</dt>
+                <dd className="font-medium text-[var(--text)]">{formatBoolean(animal.sociavelAnimais)}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--border)] pb-3">
+                <dt className="text-[var(--muted)]">Deficiencia fisica</dt>
+                <dd className="font-medium text-[var(--text)]">{formatBoolean(animal.temDeficienciaFisica)}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-3 border-dashed border-[var(--border)] pb-3">
+                <dt className="text-[var(--muted)]">Doenca cronica</dt>
+                <dd className="font-medium text-[var(--text)]">{formatBoolean(animal.temDoencaCronica)}</dd>
               </div>
               <div className="flex items-center justify-between gap-3">
                 <dt className="text-[var(--muted)]">Status</dt>
@@ -184,16 +221,6 @@ export default function AnimalDetailPage() {
                 <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
                   Envie sua aplicacao para este animal diretamente por aqui.
                 </p>
-
-                <label className="mt-4 block space-y-2 text-sm font-medium text-[var(--text)]">
-                  <span>Mensagem para o abrigo (opcional)</span>
-                  <textarea
-                    className="min-h-28 w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 outline-none transition focus:border-[var(--primary)]"
-                    value={message}
-                    onChange={(event) => setMessage(event.target.value)}
-                    placeholder="Conte por que voce seria um bom tutor para este animal..."
-                  />
-                </label>
 
                 <div className="mt-4 flex flex-wrap gap-3">
                   <button

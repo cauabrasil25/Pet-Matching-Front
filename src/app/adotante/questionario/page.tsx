@@ -10,6 +10,7 @@ type ProfileState = {
   toleranciaBarulho: 'ALTA' | 'BAIXA' | null;
   temCriancas: boolean | null;
   temOutrosPets: boolean | null;
+  horasSozinhoAnimal: number | null;
 };
 
 const defaultProfile: ProfileState = {
@@ -17,11 +18,16 @@ const defaultProfile: ProfileState = {
   nivelAtividade: null,
   toleranciaBarulho: null,
   temCriancas: null,
-  temOutrosPets: null
+  temOutrosPets: null,
+  horasSozinhoAnimal: null
 };
 
 function formatProfileValue(key: keyof ProfileState, value: ProfileState[keyof ProfileState]) {
   if (value === null) return 'Nao informado';
+
+  if (key === 'horasSozinhoAnimal') {
+    return `${value} hora${value === 1 ? '' : 's'}`;
+  }
 
   if (key === 'tipoMoradia') {
     if (value === 'CASA') return 'Casa';
@@ -48,25 +54,26 @@ function toProfileState(respostas: Record<string, string | number | boolean>): P
   const toleranciaBarulho = typeof respostas.toleranciaBarulho === 'string' ? respostas.toleranciaBarulho : null;
   const temCriancas = typeof respostas.temCriancas === 'boolean' ? respostas.temCriancas : null;
   const temOutrosPets = typeof respostas.temOutrosPets === 'boolean' ? respostas.temOutrosPets : null;
+  const horasSozinhoAnimal = typeof respostas.horasSozinhoAnimal === 'number' ? respostas.horasSozinhoAnimal : null;
 
   return {
     tipoMoradia: tipoMoradia === 'CASA' || tipoMoradia === 'APARTAMENTO' || tipoMoradia === 'SITIO' ? tipoMoradia : null,
     nivelAtividade: nivelAtividade === 'SEDENTARIO' || nivelAtividade === 'MODERADO' || nivelAtividade === 'ATIVO' ? nivelAtividade : null,
     toleranciaBarulho: toleranciaBarulho === 'ALTA' || toleranciaBarulho === 'BAIXA' ? toleranciaBarulho : null,
     temCriancas,
-    temOutrosPets
+    temOutrosPets,
+    horasSozinhoAnimal
   };
 }
 
 function toRequestPayload(profile: ProfileState) {
   return {
-    respostas: {
-      tipoMoradia: profile.tipoMoradia ?? '',
-      nivelAtividade: profile.nivelAtividade ?? '',
-      toleranciaBarulho: profile.toleranciaBarulho ?? '',
-      temCriancas: profile.temCriancas ?? false,
-      temOutrosPets: profile.temOutrosPets ?? false
-    }
+    tipoMoradia: profile.tipoMoradia ?? 'CASA',
+    nivelAtividade: profile.nivelAtividade ?? 'MODERADO',
+    toleranciaBarulho: profile.toleranciaBarulho ?? 'BAIXA',
+    temCriancas: profile.temCriancas ?? false,
+    temOutrosPets: profile.temOutrosPets ?? false,
+    horasSozinhoAnimal: profile.horasSozinhoAnimal ?? 0
   };
 }
 
@@ -101,7 +108,7 @@ export default function QuestionarioPage() {
         const response = await questionnaireService.buscar();
         if (!active) return;
 
-        setProfile(toProfileState(response.respostas));
+        setProfile(toProfileState(response));
         setHasExistingQuestionnaire(true);
       } catch (loadError) {
         if (!active) return;
@@ -277,6 +284,21 @@ export default function QuestionarioPage() {
         </section>
 
         <section className="rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow)]">
+          <label className="block space-y-2 text-sm font-medium text-[var(--text)]">
+            <span>Horas que o animal fica sozinho por dia</span>
+            <input
+              type="number"
+              min="0"
+              max="24"
+              className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 outline-none transition focus:border-[var(--primary)]"
+              value={profile.horasSozinhoAnimal ?? ''}
+              onChange={(event) => setProfile((current) => ({ ...current, horasSozinhoAnimal: event.target.value === '' ? null : Number(event.target.value) }))}
+              placeholder="0"
+            />
+          </label>
+        </section>
+
+        <section className="rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow)]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-xl font-semibold text-[var(--text)]">Resumo atual</h2>
@@ -293,7 +315,8 @@ export default function QuestionarioPage() {
               ['nivelAtividade', profile.nivelAtividade],
               ['toleranciaBarulho', profile.toleranciaBarulho],
               ['temCriancas', profile.temCriancas],
-              ['temOutrosPets', profile.temOutrosPets]
+              ['temOutrosPets', profile.temOutrosPets],
+              ['horasSozinhoAnimal', profile.horasSozinhoAnimal]
             ] as const).map(([key, value]) => (
               <div key={key} className="rounded-2xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">{key}</p>

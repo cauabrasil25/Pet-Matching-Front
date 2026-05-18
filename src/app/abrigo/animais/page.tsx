@@ -6,7 +6,9 @@ import { AppShell } from '../../../components/layout/AppShell';
 import { animalService } from '../../../services/animalService';
 import type { AnimalResponse } from '../../../types/animal';
 
-function formatLabel(value: string) {
+function formatLabel(value?: string | null) {
+  if (!value) return 'Nao informado';
+
   return value
     .toLowerCase()
     .replace(/_/g, ' ')
@@ -81,7 +83,6 @@ export default function AbrigoAnimaisPage() {
                 <p className="mt-1 text-sm text-[var(--muted)]">{formatLabel(animal.especie)} - {formatLabel(animal.porte)}</p>
               </div>
               <div className="flex flex-wrap gap-2 text-xs font-medium text-[var(--muted)]">
-                <span className="rounded-full border border-[var(--border)] px-3 py-1">{formatLabel(animal.sexo)}</span>
                 <span className="rounded-full border border-[var(--border)] px-3 py-1">{formatLabel(animal.status)}</span>
               </div>
               <div className="flex gap-3">

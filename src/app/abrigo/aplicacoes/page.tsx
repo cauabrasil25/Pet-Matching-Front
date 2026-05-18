@@ -1,13 +1,10 @@
 "use client";
 
 import Link from 'next/link';
-import { useState } from 'react';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { AppShell } from '../../../components/layout/AppShell';
 import { applicationService } from '../../../services/applicationService';
-import { animalService } from '../../../services/animalService';
 import type { AplicacaoAdocaoResponse, StatusAplicacao } from '../../../types/application';
-import type { AnimalResponse } from '../../../types/animal';
 
 function formatApplicationStatus(status: StatusAplicacao) {
   if (status === 'APROVADA') return 'Aprovada';
@@ -23,7 +20,6 @@ function statusClassName(status: StatusAplicacao) {
 
 export default function AplicacoesRecebidasPage() {
   const [items, setItems] = useState<AplicacaoAdocaoResponse[]>([]);
-  const [animals, setAnimals] = useState<AnimalResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [actionError, setActionError] = useState('');
@@ -37,14 +33,10 @@ export default function AplicacoesRecebidasPage() {
         setLoading(true);
         setError('');
 
-        const [applicationsData, animalsData] = await Promise.all([
-          applicationService.listarRecebidas(),
-          animalService.listar()
-        ]);
+        const applicationsData = await applicationService.listarRecebidas();
 
         if (active) {
           setItems(applicationsData);
-          setAnimals(animalsData);
         }
       } catch (loadError) {
         if (active) {
@@ -64,10 +56,6 @@ export default function AplicacoesRecebidasPage() {
       active = false;
     };
   }, []);
-
-  const animalById = useMemo(() => {
-    return new Map(animals.map((animal) => [animal.id, animal]));
-  }, [animals]);
 
   async function handleDecision(applicationId: string, decision: 'aprovar' | 'recusar') {
     try {
@@ -133,21 +121,28 @@ export default function AplicacoesRecebidasPage() {
 
       {!loading && !error ? <div className="mt-6 space-y-4 rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow)]">
         {items.map((item) => {
-          const animal = animalById.get(item.animalId);
-
           return (
             <article key={item.id} className="rounded-2xl border border-[var(--border)] bg-white p-5">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <h2 className="text-lg font-semibold text-[var(--text)]">Aplicacao #{item.id}</h2>
-                  <p className="mt-1 text-sm text-[var(--muted)]">{animal?.nome ?? `Animal ${item.animalId}`}</p>
+                  <p className="mt-1 text-sm text-[var(--muted)]">{item.animalNome} • {item.adotanteNome}</p>
                 </div>
                 <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClassName(item.status)}`}>
                   {formatApplicationStatus(item.status)}
                 </span>
               </div>
 
-              <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{item.mensagem ?? 'Sem mensagem enviada.'}</p>
+              <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+                Compatibilidade: {item.scoreMatch}% • Chance de retorno: {item.chanceRetorno}%
+              </p>
+              {item.motivosChanceRetorno.length > 0 ? (
+                <ul className="mt-3 space-y-1 text-sm text-[var(--muted)]">
+                  {item.motivosChanceRetorno.slice(0, 3).map((motivo) => (
+                    <li key={motivo}>• {motivo}</li>
+                  ))}
+                </ul>
+              ) : null}
 
               <div className="mt-3">
                 <Link href={`/animais/${item.animalId}`} className="text-sm font-semibold text-[var(--primary-strong)]">

@@ -6,11 +6,17 @@ import { AppShell } from '../../components/layout/AppShell';
 import { animalService } from '../../services/animalService';
 import type { AnimalResponse } from '../../types/animal';
 
-function formatLabel(value: string) {
+function formatLabel(value?: string | null) {
+  if (!value) return 'Nao informado';
+
   return value
     .toLowerCase()
     .replace(/_/g, ' ')
     .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function formatBoolean(value?: boolean) {
+  return value ? 'Sim' : 'Nao';
 }
 
 export default function AnimalsPage() {
@@ -60,7 +66,7 @@ export default function AnimalsPage() {
   }, [animals]);
 
   const visibleAnimals = animals.filter((animal) => {
-    const haystack = `${animal.nome} ${animal.especie} ${animal.porte} ${animal.sexo} ${animal.descricao ?? ''}`.toLowerCase();
+    const haystack = `${animal.nome} ${animal.especie} ${animal.porte} ${animal.nivelEnergia ?? ''} ${animal.nivelBarulho ?? ''} ${animal.descricaoSaude ?? ''}`.toLowerCase();
     const matchesSearch = haystack.includes(search.toLowerCase());
     const matchesSpecies = species === 'all' || animal.especie === species;
     const matchesSize = size === 'all' || animal.porte === size;
@@ -147,19 +153,29 @@ export default function AnimalsPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h2 className="text-xl font-semibold text-[var(--text)]">{animal.nome}</h2>
-                    <p className="mt-1 text-sm text-[var(--muted)]">{formatLabel(animal.especie)} - {formatLabel(animal.porte)}</p>
+                    <p className="mt-1 text-sm text-[var(--muted)]">{formatLabel(animal.especie)} - {formatLabel(animal.porte)} - {animal.idade} anos - {animal.peso.toFixed(1)} kg</p>
                   </div>
-                  <span className="rounded-full bg-[rgba(15,118,110,0.1)] px-3 py-1 text-xs font-semibold text-[var(--primary-strong)]">
-                    {formatLabel(animal.sexo)}
-                  </span>
+                  {animal.descricaoSaude ? (
+                    <span className="rounded-full bg-[rgba(15,118,110,0.1)] px-3 py-1 text-xs font-semibold text-[var(--primary-strong)]">
+                      Saude informada
+                    </span>
+                  ) : null}
                 </div>
-                <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{animal.descricao ?? 'Sem descricao informada.'}</p>
+                <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+                  Energia: {formatLabel(animal.nivelEnergia ?? 'MEDIO')} • Barulho: {formatLabel(animal.nivelBarulho ?? 'BAIXO')} •
+                  Sociavel com estranhos: {formatBoolean(animal.sociavelEstranhos)}
+                </p>
+                {animal.descricaoSaude ? (
+                  <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Saude: {animal.descricaoSaude}</p>
+                ) : null}
               </div>
 
               <div className="flex flex-wrap gap-2 text-xs font-medium text-[var(--muted)]">
                 <span className="rounded-full border border-[var(--border)] px-3 py-1">{formatLabel(animal.especie)}</span>
                 <span className="rounded-full border border-[var(--border)] px-3 py-1">{formatLabel(animal.porte)}</span>
                 <span className="rounded-full border border-[var(--border)] px-3 py-1">{formatLabel(animal.status)}</span>
+                <span className="rounded-full border border-[var(--border)] px-3 py-1">Deficiencia: {formatBoolean(animal.temDeficienciaFisica)}</span>
+                <span className="rounded-full border border-[var(--border)] px-3 py-1">Doenca cronica: {formatBoolean(animal.temDoencaCronica)}</span>
               </div>
 
               <div className="flex gap-3">

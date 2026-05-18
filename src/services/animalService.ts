@@ -7,7 +7,6 @@ export const animalService = {
 
     if (filtro?.especie) params.set('especie', filtro.especie);
     if (filtro?.porte) params.set('porte', filtro.porte);
-    if (filtro?.sexo) params.set('sexo', filtro.sexo);
     if (filtro?.status) params.set('status', filtro.status);
 
     const suffix = params.toString() ? `?${params.toString()}` : '';

@@ -1,13 +1,23 @@
-export type StatusAplicacao = 'PENDENTE' | 'APROVADA' | 'RECUSADA';
+export type StatusAplicacao = 'PENDENTE' | 'APROVADA' | 'RECUSADA' | 'DESISTENCIA';
 
 export type CriarAplicacaoAdocaoRequest = {
   animalId: string;
-  mensagem?: string;
 };
 
 export type AplicacaoAdocaoResponse = {
   id: string;
+  adotanteId: string;
+  adotanteNome: string;
   animalId: string;
+  animalNome: string;
+  statusAnimal: 'DISPONIVEL' | 'PENDENTE' | 'ADOTADO';
+  abrigoId: string;
+  abrigoNome: string;
+  dataAplicacao: string;
   status: StatusAplicacao;
-  mensagem?: string;
+  scoreMatch: number;
+  adotanteCompativel: boolean;
+  chanceRetorno: number;
+  motivosCompatibilidade: string[];
+  motivosChanceRetorno: string[];
 };

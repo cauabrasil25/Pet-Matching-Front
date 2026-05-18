@@ -17,6 +17,7 @@ type ProfileState = {
   toleranciaBarulho: 'ALTA' | 'BAIXA' | null;
   temCriancas: boolean | null;
   temOutrosPets: boolean | null;
+  horasSozinhoAnimal: number | null;
 };
 
 const defaultProfile: ProfileState = {
@@ -24,10 +25,13 @@ const defaultProfile: ProfileState = {
   nivelAtividade: null,
   toleranciaBarulho: null,
   temCriancas: null,
-  temOutrosPets: null
+  temOutrosPets: null,
+  horasSozinhoAnimal: null
 };
 
-function formatLabel(value: string) {
+function formatLabel(value?: string | null) {
+  if (!value) return 'Nao informado';
+
   return value
     .toLowerCase()
     .replace(/_/g, ' ')
@@ -49,6 +53,10 @@ function statusClassName(status: StatusAplicacao) {
 function formatProfileValue(key: keyof ProfileState, value: ProfileState[keyof ProfileState]) {
   if (value === null) return 'Nao informado';
 
+  if (key === 'horasSozinhoAnimal') {
+    return `${value} hora${value === 1 ? '' : 's'}`;
+  }
+
   if (key === 'tipoMoradia') {
     if (value === 'CASA') return 'Casa';
     if (value === 'APARTAMENTO') return 'Apartamento';
@@ -68,19 +76,30 @@ function formatProfileValue(key: keyof ProfileState, value: ProfileState[keyof P
   return value === true ? 'Sim' : 'Nao';
 }
 
-function toProfileState(respostas: Record<string, string | number | boolean>): ProfileState {
-  const tipoMoradia = typeof respostas.tipoMoradia === 'string' ? respostas.tipoMoradia : null;
-  const nivelAtividade = typeof respostas.nivelAtividade === 'string' ? respostas.nivelAtividade : null;
-  const toleranciaBarulho = typeof respostas.toleranciaBarulho === 'string' ? respostas.toleranciaBarulho : null;
-  const temCriancas = typeof respostas.temCriancas === 'boolean' ? respostas.temCriancas : null;
-  const temOutrosPets = typeof respostas.temOutrosPets === 'boolean' ? respostas.temOutrosPets : null;
+function normalizeQuestionnaireValue(value: string) {
+  return value.trim().toUpperCase().replace(/\s+/g, '_');
+}
+
+function toProfileState(questionnaire: {
+  tipoMoradia: string;
+  nivelAtividade: string;
+  toleranciaBarulho: string;
+  temCriancas: boolean;
+  temOutrosPets: boolean;
+  horasSozinhoAnimal: number;
+}): ProfileState {
+  const { tipoMoradia, nivelAtividade, toleranciaBarulho, temCriancas, temOutrosPets, horasSozinhoAnimal } = questionnaire;
+  const normalizedTipoMoradia = normalizeQuestionnaireValue(tipoMoradia);
+  const normalizedNivelAtividade = normalizeQuestionnaireValue(nivelAtividade);
+  const normalizedToleranciaBarulho = normalizeQuestionnaireValue(toleranciaBarulho);
 
   return {
-    tipoMoradia: tipoMoradia === 'CASA' || tipoMoradia === 'APARTAMENTO' || tipoMoradia === 'SITIO' ? tipoMoradia : null,
-    nivelAtividade: nivelAtividade === 'SEDENTARIO' || nivelAtividade === 'MODERADO' || nivelAtividade === 'ATIVO' ? nivelAtividade : null,
-    toleranciaBarulho: toleranciaBarulho === 'ALTA' || toleranciaBarulho === 'BAIXA' ? toleranciaBarulho : null,
+    tipoMoradia: normalizedTipoMoradia === 'CASA' || normalizedTipoMoradia === 'APARTAMENTO' || normalizedTipoMoradia === 'SITIO' ? normalizedTipoMoradia : null,
+    nivelAtividade: normalizedNivelAtividade === 'SEDENTARIO' || normalizedNivelAtividade === 'MODERADO' || normalizedNivelAtividade === 'ATIVO' ? normalizedNivelAtividade : null,
+    toleranciaBarulho: normalizedToleranciaBarulho === 'ALTA' || normalizedToleranciaBarulho === 'BAIXA' ? normalizedToleranciaBarulho : null,
     temCriancas,
-    temOutrosPets
+    temOutrosPets,
+    horasSozinhoAnimal
   };
 }
 
@@ -111,7 +130,7 @@ export default function AdotanteDashboardPage() {
         let profileData = defaultProfile;
         try {
           const questionnaire = await questionnaireService.buscar();
-          profileData = toProfileState(questionnaire.respostas);
+          profileData = toProfileState(questionnaire);
         } catch {
           profileData = defaultProfile;
         }
@@ -271,7 +290,6 @@ export default function AdotanteDashboardPage() {
                     <p className="text-sm leading-6 text-[var(--muted)]">{animal.descricao ?? 'Sem descricao informada.'}</p>
                     <div className="flex flex-wrap gap-2 text-xs font-medium text-[var(--muted)]">
                       <span className="rounded-full border border-[var(--border)] px-3 py-1">{formatLabel(animal.status)}</span>
-                      <span className="rounded-full border border-[var(--border)] px-3 py-1">{formatLabel(animal.sexo)}</span>
                     </div>
                     <div className="flex gap-3">
                       <Link href={`/animais/${animal.id}`} className="flex-1 rounded-full border border-[var(--border)] px-4 py-2.5 text-center text-sm font-semibold text-[var(--text)] transition hover:bg-[var(--surface-2)]">
@@ -320,19 +338,20 @@ export default function AdotanteDashboardPage() {
       {tab === 'aplicacoes' ? (
         <section className="mt-6 space-y-4 rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow)]">
           {applications.map((application) => {
-            const animal = animals.find((item) => item.id === application.animalId);
             return (
               <article key={application.id} className="rounded-2xl border border-[var(--border)] bg-white p-5">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <h3 className="text-lg font-semibold text-[var(--text)]">{animal?.nome ?? `Animal ${application.animalId}`}</h3>
-                    <p className="mt-1 text-sm text-[var(--muted)]">Aplicacao #{application.id}</p>
+                    <h3 className="text-lg font-semibold text-[var(--text)]">{application.animalNome}</h3>
+                    <p className="mt-1 text-sm text-[var(--muted)]">{application.abrigoNome} • Aplicacao #{application.id}</p>
                   </div>
                   <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClassName(application.status)}`}>
                     {formatApplicationStatus(application.status)}
                   </span>
                 </div>
-                <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{application.mensagem ?? 'Sem mensagem enviada.'}</p>
+                <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+                  Compatibilidade: {application.scoreMatch}% • Chance de retorno: {application.chanceRetorno}%
+                </p>
                 <div className="mt-4 flex items-center gap-3 text-sm text-[var(--muted)]">
                   <span>Status da aplicacao: {formatApplicationStatus(application.status)}</span>
                   <Link href={`/animais/${application.animalId}`} className="font-semibold text-[var(--primary-strong)]">

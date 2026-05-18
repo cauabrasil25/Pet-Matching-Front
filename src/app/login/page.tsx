@@ -10,6 +10,8 @@ export default function LoginPage() {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [userType, setUserType] = useState<'adotante' | 'abrigo'>('adotante');
   const [name, setName] = useState('');
+  const [cpf, setCpf] = useState('');
+  const [cnpj, setCnpj] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -54,13 +56,15 @@ export default function LoginPage() {
         await authService.registrarAdotante({
           nome: name.trim(),
           email,
-          senha: password
+          senha: password,
+          cpf: cpf.trim()
         });
       } else {
         await authService.registrarAbrigo({
           nome: name.trim(),
           email,
-          senha: password
+          senha: password,
+          cnpj: cnpj.trim()
         });
       }
 
@@ -153,6 +157,18 @@ export default function LoginPage() {
                   value={name}
                   onChange={(event) => setName(event.target.value)}
                   placeholder={userType === 'adotante' ? 'Digite seu nome' : 'Digite o nome do abrigo'}
+                />
+              </label>
+            ) : null}
+
+            {mode === 'signup' ? (
+              <label className="block space-y-2 text-sm font-medium text-[var(--text)]">
+                <span>{userType === 'adotante' ? 'CPF' : 'CNPJ'}</span>
+                <input
+                  className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 outline-none transition focus:border-[var(--primary)]"
+                  value={userType === 'adotante' ? cpf : cnpj}
+                  onChange={(event) => (userType === 'adotante' ? setCpf(event.target.value) : setCnpj(event.target.value))}
+                  placeholder={userType === 'adotante' ? '000.000.000-00' : '00.000.000/0000-00'}
                 />
               </label>
             ) : null}
