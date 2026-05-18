@@ -1,84 +1,141 @@
 "use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { AppShell } from '../components/layout/AppShell';
-import { authService, saveAuthSession } from '../services/authService';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+
+import {
+  PawPrint,
+  Heart,
+  ShieldCheck,
+  Building2,
+  User,
+  Mail,
+  Lock,
+  FileText,
+  ArrowRight,
+  CheckCircle2,
+} from "lucide-react";
+
+import { AppShell } from "../components/layout/AppShell";
+import { authService, saveAuthSession } from "../services/authService";
 
 export default function HomePage() {
   const router = useRouter();
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
-  const [userType, setUserType] = useState<'adotante' | 'abrigo'>('adotante');
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [cpf, setCpf] = useState('');
-  const [cnpj, setCnpj] = useState('');
-  const [submitted, setSubmitted] = useState('');
-  const [error, setError] = useState('');
+
+  const [mode, setMode] = useState<"login" | "signup">("login");
+
+  const [userType, setUserType] = useState<
+    "adotante" | "abrigo"
+  >("adotante");
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] =
+    useState("");
+
+  const [cpf, setCpf] = useState("");
+  const [cnpj, setCnpj] = useState("");
+
+  const [submitted, setSubmitted] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const passwordRules = {
     minLength: password.length >= 8,
     hasNumber: /\d/.test(password),
-    hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+    hasSpecialChar:
+      /[!@#$%^&*(),.?":{}|<>]/.test(password),
   };
 
   const isSignupValid =
     name.trim().length > 0 &&
-    (userType === 'adotante' ? cpf.trim().length > 0 : cnpj.trim().length > 0) &&
+    (userType === "adotante"
+      ? cpf.trim().length > 0
+      : cnpj.trim().length > 0) &&
     passwordRules.minLength &&
     passwordRules.hasNumber &&
     passwordRules.hasSpecialChar &&
     confirmPassword === password &&
     confirmPassword.length > 0;
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
     event.preventDefault();
-    setError('');
-    setSubmitted('');
+
+    setError("");
+    setSubmitted("");
 
     if (!email || !password) return;
-    if (mode === 'signup' && !isSignupValid) return;
+
+    if (mode === "signup" && !isSignupValid)
+      return;
 
     try {
       setLoading(true);
 
-      if (mode === 'login') {
-        const response = await authService.login({ email, senha: password });
+      if (mode === "login") {
+        const response = await authService.login({
+          email,
+          senha: password,
+        });
+
         saveAuthSession(response);
 
-        setSubmitted('Login realizado com sucesso. Redirecionando...');
-        const role = response?.user?.role ?? 'ADOTANTE';
-        router.push(role === 'ABRIGO' ? '/abrigo/dashboard' : '/adotante/dashboard');
+        setSubmitted(
+          "Login realizado com sucesso."
+        );
+
+        const role =
+          response?.user?.role ?? "ADOTANTE";
+
+        router.push(
+          role === "ABRIGO"
+            ? "/abrigo/dashboard"
+            : "/adotante/dashboard"
+        );
+
         return;
       }
 
-      if (userType === 'adotante') {
+      if (userType === "adotante") {
         await authService.registrarAdotante({
           nome: name.trim(),
           email,
           senha: password,
-          cpf: cpf.trim()
+          cpf: cpf.trim(),
         });
       } else {
         await authService.registrarAbrigo({
           nome: name.trim(),
           email,
           senha: password,
-          cnpj: cnpj.trim()
+          cnpj: cnpj.trim(),
         });
       }
 
-      const response = await authService.login({ email, senha: password });
+      const response = await authService.login({
+        email,
+        senha: password,
+      });
+
       saveAuthSession(response);
 
-      setSubmitted('Cadastro concluido e sessao iniciada. Redirecionando...');
-      const role = response?.user?.role ?? 'ADOTANTE';
-      router.push(role === 'ABRIGO' ? '/abrigo/dashboard' : '/adotante/dashboard');
+      const role =
+        response?.user?.role ?? "ADOTANTE";
+
+      router.push(
+        role === "ABRIGO"
+          ? "/abrigo/dashboard"
+          : "/adotante/dashboard"
+      );
     } catch (submitError) {
-      const message = submitError instanceof Error ? submitError.message : 'Nao foi possivel concluir a autenticacao.';
+      const message =
+        submitError instanceof Error
+          ? submitError.message
+          : "Não foi possível autenticar.";
+
       setError(message);
     } finally {
       setLoading(false);
@@ -86,169 +143,367 @@ export default function HomePage() {
   };
 
   return (
-    <AppShell
-      eyebrow="Acesso"
-      title="Entrar na plataforma"
-      description="Fluxo de login e cadastro reorganizado para o Next em src/app."
+    <AppShell 
+      eyebrow="Pet Matching"
+      title="Encontre seu novo melhor amigo"
+      description="Plataforma inteligente para conectar adotantes e abrigos."
       showNavigation={false}
     >
-      <section className="grid gap-6 lg:grid-cols-[1.05fr_1fr]">
-        <article className="rounded-[28px] border border-[var(--border)] bg-[linear-gradient(160deg,rgba(15,118,110,0.12),rgba(217,119,6,0.12))] p-8 shadow-[var(--shadow)]">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent)]">Pet Matching</p>
-          <h2 className="mt-4 text-3xl font-semibold tracking-tight text-[var(--text)]">Acesso para adotantes e abrigos</h2>
-          <p className="mt-4 max-w-xl text-sm leading-6 text-[var(--muted)]">
-            A tela de origem foi adaptada para a estrutura de rotas do Next, mantendo o mesmo fluxo de autenticacao,
-            escolha de perfil e validacao de senha.
-          </p>
+      <div className="relative overflow-hidden">
+        {/* Background */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.12),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(245,158,11,0.12),transparent_35%)]" />
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            <div className="rounded-2xl border border-[var(--border)] bg-white/80 p-5">
-              <p className="text-sm font-semibold text-[var(--primary-strong)]">Adotante</p>
-              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Acompanhe questionario, favoritos e aplicacoes enviadas.</p>
+        <section className="relative mx-auto grid min-h-screen max-w-7xl items-center gap-10 px-4 py-10 lg:grid-cols-2">
+          {/* Left Side */}
+          <div className="space-y-8">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700">
+              <PawPrint className="h-4 w-4" />
+              Plataforma de adoção inteligente
             </div>
-            <div className="rounded-2xl border border-[var(--border)] bg-white/80 p-5">
-              <p className="text-sm font-semibold text-[var(--primary-strong)]">Abrigo</p>
-              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Gerencie animais, cadastros e aplicacoes recebidas.</p>
+
+            <div>
+              <h1 className="max-w-xl text-5xl font-black leading-tight tracking-tight text-zinc-900">
+                Encontre o pet ideal para sua família.
+              </h1>
+
+              <p className="mt-6 max-w-xl text-lg leading-8 text-zinc-600">
+                Conectamos adotantes e abrigos
+                através de um sistema inteligente
+                de compatibilidade comportamental.
+              </p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="rounded-3xl border border-zinc-200 bg-white/80 p-5 shadow-sm backdrop-blur">
+                <Heart className="h-8 w-8 text-rose-500" />
+
+                <h3 className="mt-4 font-semibold text-zinc-900">
+                  Matching inteligente
+                </h3>
+
+                <p className="mt-2 text-sm leading-6 text-zinc-600">
+                  Compatibilidade baseada no seu
+                  estilo de vida.
+                </p>
+              </div>
+
+              <div className="rounded-3xl border border-zinc-200 bg-white/80 p-5 shadow-sm backdrop-blur">
+                <ShieldCheck className="h-8 w-8 text-emerald-600" />
+
+                <h3 className="mt-4 font-semibold text-zinc-900">
+                  Processo seguro
+                </h3>
+
+                <p className="mt-2 text-sm leading-6 text-zinc-600">
+                  Cadastro validado para adotantes
+                  e abrigos.
+                </p>
+              </div>
+
+              <div className="rounded-3xl border border-zinc-200 bg-white/80 p-5 shadow-sm backdrop-blur">
+                <PawPrint className="h-8 w-8 text-amber-500" />
+
+                <h3 className="mt-4 font-semibold text-zinc-900">
+                  Mais adoções
+                </h3>
+
+                <p className="mt-2 text-sm leading-6 text-zinc-600">
+                  Aproximando pets de famílias
+                  ideais.
+                </p>
+              </div>
             </div>
           </div>
-        </article>
 
-        <section className="rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow)]">
-          <div className="flex gap-2 rounded-full bg-[var(--surface-2)] p-1 text-sm font-medium">
-            <button
-              type="button"
-              onClick={() => setMode('login')}
-              className={`flex-1 rounded-full px-4 py-2 transition ${mode === 'login' ? 'bg-white text-[var(--text)] shadow-sm' : 'text-[var(--muted)]'}`}
-            >
-              Login
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode('signup')}
-              className={`flex-1 rounded-full px-4 py-2 transition ${mode === 'signup' ? 'bg-white text-[var(--text)] shadow-sm' : 'text-[var(--muted)]'}`}
-            >
-              Cadastro
-            </button>
-          </div>
+          {/* Right Side */}
+          <div className="relative">
+            <div className="absolute -inset-1 rounded-[36px] bg-gradient-to-br from-emerald-500/30 via-transparent to-amber-500/30 blur-2xl" />
 
-          <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-            {mode === 'signup' ? (
-              <div className="grid gap-3 sm:grid-cols-2">
+            <div className="relative rounded-[36px] border border-white/40 bg-white/80 p-8 shadow-2xl backdrop-blur-xl">
+              {/* Tabs */}
+              <div className="flex rounded-2xl bg-zinc-100 p-1">
                 <button
                   type="button"
-                  onClick={() => setUserType('adotante')}
-                  className={`rounded-2xl border p-4 text-left transition ${userType === 'adotante' ? 'border-[var(--primary)] bg-[rgba(15,118,110,0.08)]' : 'border-[var(--border)] bg-white'}`}
+                  onClick={() => setMode("login")}
+                  className={`flex-1 rounded-xl px-4 py-3 text-sm font-semibold transition-all ${
+                    mode === "login"
+                      ? "bg-white text-zinc-900 shadow-md"
+                      : "text-zinc-500"
+                  }`}
                 >
-                  <p className="font-semibold text-[var(--text)]">Adotante</p>
-                  <p className="mt-1 text-sm text-[var(--muted)]">Perfil para buscar e aplicar em animais.</p>
+                  Entrar
                 </button>
+
                 <button
                   type="button"
-                  onClick={() => setUserType('abrigo')}
-                  className={`rounded-2xl border p-4 text-left transition ${userType === 'abrigo' ? 'border-[var(--primary)] bg-[rgba(15,118,110,0.08)]' : 'border-[var(--border)] bg-white'}`}
+                  onClick={() => setMode("signup")}
+                  className={`flex-1 rounded-xl px-4 py-3 text-sm font-semibold transition-all ${
+                    mode === "signup"
+                      ? "bg-white text-zinc-900 shadow-md"
+                      : "text-zinc-500"
+                  }`}
                 >
-                  <p className="font-semibold text-[var(--text)]">Abrigo</p>
-                  <p className="mt-1 text-sm text-[var(--muted)]">Perfil para publicar animais e aprovar matches.</p>
+                  Criar conta
                 </button>
               </div>
-            ) : null}
 
-            {mode === 'signup' ? (
-              <label className="block space-y-2 text-sm font-medium text-[var(--text)]">
-                <span>{userType === 'adotante' ? 'Nome completo' : 'Nome do abrigo'}</span>
-                <input
-                  className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 outline-none transition focus:border-[var(--primary)]"
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  placeholder={userType === 'adotante' ? 'Digite seu nome' : 'Digite o nome do abrigo'}
-                />
-              </label>
-            ) : null}
+              <form
+                onSubmit={handleSubmit}
+                className="mt-8 space-y-5"
+              >
+                {/* Tipo de usuário */}
+                {mode === "signup" && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setUserType("adotante")
+                      }
+                      className={`rounded-3xl border p-5 text-left transition-all ${
+                        userType === "adotante"
+                          ? "border-emerald-500 bg-emerald-50 shadow-md"
+                          : "border-zinc-200 bg-white hover:border-zinc-300"
+                      }`}
+                    >
+                      <User className="h-8 w-8 text-emerald-600" />
 
-            {mode === 'signup' && userType === 'adotante' ? (
-              <label className="block space-y-2 text-sm font-medium text-[var(--text)]">
-                <span>CPF</span>
-                <input
-                  className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 outline-none transition focus:border-[var(--primary)]"
-                  value={cpf}
-                  onChange={(event) => setCpf(event.target.value)}
-                  placeholder="000.000.000-00"
-                />
-              </label>
-            ) : null}
+                      <h3 className="mt-4 font-semibold text-zinc-900">
+                        Adotante
+                      </h3>
 
-            {mode === 'signup' && userType === 'abrigo' ? (
-              <label className="block space-y-2 text-sm font-medium text-[var(--text)]">
-                <span>CNPJ</span>
-                <input
-                  className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 outline-none transition focus:border-[var(--primary)]"
-                  value={cnpj}
-                  onChange={(event) => setCnpj(event.target.value)}
-                  placeholder="00.000.000/0000-00"
-                />
-              </label>
-            ) : null}
+                      <p className="mt-1 text-sm text-zinc-600">
+                        Buscar e aplicar para pets
+                      </p>
+                    </button>
 
-            <label className="block space-y-2 text-sm font-medium text-[var(--text)]">
-              <span>Email</span>
-              <input
-                className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 outline-none transition focus:border-[var(--primary)]"
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="seu@email.com"
-              />
-            </label>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setUserType("abrigo")
+                      }
+                      className={`rounded-3xl border p-5 text-left transition-all ${
+                        userType === "abrigo"
+                          ? "border-emerald-500 bg-emerald-50 shadow-md"
+                          : "border-zinc-200 bg-white hover:border-zinc-300"
+                      }`}
+                    >
+                      <Building2 className="h-8 w-8 text-amber-600" />
 
-            <label className="block space-y-2 text-sm font-medium text-[var(--text)]">
-              <span>Senha</span>
-              <input
-                className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 outline-none transition focus:border-[var(--primary)]"
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="********"
-              />
-            </label>
+                      <h3 className="mt-4 font-semibold text-zinc-900">
+                        Abrigo
+                      </h3>
 
-            {mode === 'signup' ? (
-              <>
-                <label className="block space-y-2 text-sm font-medium text-[var(--text)]">
-                  <span>Confirmar senha</span>
-                  <input
-                    className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 outline-none transition focus:border-[var(--primary)]"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(event) => setConfirmPassword(event.target.value)}
-                    placeholder="********"
+                      <p className="mt-1 text-sm text-zinc-600">
+                        Gerenciar animais e adoções
+                      </p>
+                    </button>
+                  </div>
+                )}
+
+                {/* Nome */}
+                {mode === "signup" && (
+                  <Input
+                    icon={<User size={18} />}
+                    placeholder={
+                      userType === "adotante"
+                        ? "Seu nome completo"
+                        : "Nome do abrigo"
+                    }
+                    value={name}
+                    onChange={setName}
                   />
-                </label>
+                )}
 
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-2)] p-4 text-sm text-[var(--muted)]">
-                  <p className="font-semibold text-[var(--text)]">Regras da senha</p>
-                  <ul className="mt-3 space-y-1">
-                    <li>{passwordRules.minLength ? 'OK' : 'Pendente'} - minimo de 8 caracteres</li>
-                    <li>{passwordRules.hasNumber ? 'OK' : 'Pendente'} - pelo menos um numero</li>
-                    <li>{passwordRules.hasSpecialChar ? 'OK' : 'Pendente'} - pelo menos um caractere especial</li>
-                    <li>{confirmPassword && confirmPassword === password ? 'OK' : 'Pendente'} - as senhas coincidem</li>
-                  </ul>
-                </div>
-              </>
-            ) : null}
+                {/* CPF / CNPJ */}
+                {mode === "signup" &&
+                  userType === "adotante" && (
+                    <Input
+                      icon={<FileText size={18} />}
+                      placeholder="CPF"
+                      value={cpf}
+                      onChange={setCpf}
+                    />
+                  )}
 
-            <button
-              type="submit"
-              className="w-full rounded-full bg-[var(--primary)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--primary-strong)] disabled:cursor-not-allowed disabled:opacity-70"
-              disabled={loading || (mode === 'signup' && !isSignupValid)}
-            >
-              {loading ? 'Processando...' : mode === 'login' ? 'Entrar' : 'Criar conta'}
-            </button>
-          </form>
+                {mode === "signup" &&
+                  userType === "abrigo" && (
+                    <Input
+                      icon={<FileText size={18} />}
+                      placeholder="CNPJ"
+                      value={cnpj}
+                      onChange={setCnpj}
+                    />
+                  )}
 
-          {error ? <p className="mt-4 text-sm text-red-700">{error}</p> : null}
-          {submitted ? <p className="mt-4 text-sm text-[var(--primary-strong)]">{submitted}</p> : null}
+                {/* Email */}
+                <Input
+                  icon={<Mail size={18} />}
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={email}
+                  onChange={setEmail}
+                />
+
+                {/* Senha */}
+                <Input
+                  icon={<Lock size={18} />}
+                  type="password"
+                  placeholder="Senha"
+                  value={password}
+                  onChange={setPassword}
+                />
+
+                {/* Confirmar senha */}
+                {mode === "signup" && (
+                  <>
+                    <Input
+                      icon={<Lock size={18} />}
+                      type="password"
+                      placeholder="Confirmar senha"
+                      value={confirmPassword}
+                      onChange={setConfirmPassword}
+                    />
+
+                    <div className="rounded-3xl border border-zinc-200 bg-zinc-50 p-5">
+                      <p className="font-semibold text-zinc-900">
+                        Requisitos da senha
+                      </p>
+
+                      <div className="mt-4 space-y-2">
+                        <PasswordRule
+                          valid={
+                            passwordRules.minLength
+                          }
+                          text="Mínimo de 8 caracteres"
+                        />
+
+                        <PasswordRule
+                          valid={
+                            passwordRules.hasNumber
+                          }
+                          text="Pelo menos um número"
+                        />
+
+                        <PasswordRule
+                          valid={
+                            passwordRules.hasSpecialChar
+                          }
+                          text="Um caractere especial"
+                        />
+
+                        <PasswordRule
+                          valid={
+                            confirmPassword ===
+                              password &&
+                            confirmPassword.length >
+                              0
+                          }
+                          text="As senhas coincidem"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Error */}
+                {error && (
+                  <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {error}
+                  </div>
+                )}
+
+                {/* Success */}
+                {submitted && (
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                    {submitted}
+                  </div>
+                )}
+
+                {/* Submit */}
+                <button
+                  type="submit"
+                  disabled={
+                    loading ||
+                    (mode === "signup" &&
+                      !isSignupValid)
+                  }
+                  className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-5 py-4 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {loading
+                    ? "Processando..."
+                    : mode === "login"
+                    ? "Entrar"
+                    : "Criar conta"}
+
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </button>
+              </form>
+            </div>
+          </div>
         </section>
-      </section>
+      </div>
     </AppShell>
+  );
+}
+
+interface InputProps {
+  icon: React.ReactNode;
+  placeholder: string;
+  value: string;
+  onChange: (value: string) => void;
+  type?: string;
+}
+
+function Input({
+  icon,
+  placeholder,
+  value,
+  onChange,
+  type = "text",
+}: InputProps) {
+  return (
+    <div className="relative">
+      <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400">
+        {icon}
+      </div>
+
+      <input
+        type={type}
+        value={value}
+        onChange={(event) =>
+          onChange(event.target.value)
+        }
+        placeholder={placeholder}
+        className="w-full rounded-2xl border border-zinc-200 bg-white px-12 py-4 text-sm outline-none transition-all placeholder:text-zinc-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
+      />
+    </div>
+  );
+}
+
+function PasswordRule({
+  valid,
+  text,
+}: {
+  valid: boolean;
+  text: string;
+}) {
+  return (
+    <div
+      className={`flex items-center gap-2 text-sm ${
+        valid
+          ? "text-emerald-700"
+          : "text-zinc-500"
+      }`}
+    >
+      <CheckCircle2
+        className={`h-4 w-4 ${
+          valid
+            ? "text-emerald-600"
+            : "text-zinc-400"
+        }`}
+      />
+
+      <span>{text}</span>
+    </div>
   );
 }
