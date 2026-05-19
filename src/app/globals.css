@@ -468,6 +468,7 @@ p {
 .bg-green-600 { background-color: #16a34a; }
 .bg-amber-50 { background-color: #fffbeb; }
 .bg-amber-100 { background-color: #fef3c7; }
+.bg-amber-500 { background-color: #f59e0b; }
 [class~="bg-amber-200/30"] { background-color: rgba(253, 230, 138, 0.3); }
 .bg-orange-100 { background-color: #ffedd5; }
 .bg-pink-100 { background-color: #fce7f3; }

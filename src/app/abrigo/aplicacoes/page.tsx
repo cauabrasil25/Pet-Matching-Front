@@ -30,6 +30,22 @@ function progressColor(score: number) {
   return 'bg-rose-500';
 }
 
+function isMetricAvailable(value: number | null | undefined): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+function formatPercent(value: number | null | undefined) {
+  return isMetricAvailable(value) ? `${Math.round(value)}%` : 'Nao calculado';
+}
+
+function getMetricValue(value: number | null | undefined) {
+  return isMetricAvailable(value) ? value : 0;
+}
+
+function getReasons(reasons: string[] | null | undefined) {
+  return Array.isArray(reasons) ? reasons.filter(Boolean) : [];
+}
+
 export default function AplicacoesRecebidasPage() {
   const [items, setItems] = useState<AplicacaoAdocaoResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -118,12 +134,18 @@ export default function AplicacoesRecebidasPage() {
   const averageCompatibility = useMemo(() => {
     if (items.length === 0) return 0;
 
-    const total = items.reduce(
-      (accumulator, item) => accumulator + item.scoreMatch,
+    const scores = items
+      .map((item) => item.scoreMatch)
+      .filter(isMetricAvailable);
+
+    if (scores.length === 0) return 0;
+
+    const total = scores.reduce(
+      (accumulator, score) => accumulator + score,
       0
     );
 
-    return Math.round(total / items.length);
+    return Math.round(total / scores.length);
   }, [items]);
 
   return (
@@ -216,6 +238,10 @@ export default function AplicacoesRecebidasPage() {
       {!loading && !error ? (
         <section className="mt-8 space-y-6">
           {items.map((item) => {
+            const scoreMatch = getMetricValue(item.scoreMatch);
+            const chanceRetorno = getMetricValue(item.chanceRetorno);
+            const returnReasons = getReasons(item.motivosChanceRetorno);
+
             return (
               <article
                 key={item.id}
@@ -261,7 +287,7 @@ export default function AplicacoesRecebidasPage() {
                       </p>
 
                       <p className="mt-2 text-3xl font-bold text-[var(--text)]">
-                        {item.scoreMatch}%
+                        {formatPercent(item.scoreMatch)}
                       </p>
                     </div>
                   </div>
@@ -276,17 +302,17 @@ export default function AplicacoesRecebidasPage() {
                         </p>
 
                         <span className="text-sm font-bold text-[var(--primary-strong)]">
-                          {item.scoreMatch}%
+                          {formatPercent(item.scoreMatch)}
                         </span>
                       </div>
 
                       <div className="mt-4 h-3 overflow-hidden rounded-full bg-white">
                         <div
                           className={`h-full rounded-full transition-all duration-500 ${progressColor(
-                            item.scoreMatch
+                            scoreMatch
                           )}`}
                           style={{
-                            width: `${item.scoreMatch}%`
+                            width: `${scoreMatch}%`
                           }}
                         />
                       </div>
@@ -299,7 +325,7 @@ export default function AplicacoesRecebidasPage() {
                         </p>
 
                         <span className="text-sm font-bold text-rose-600">
-                          {item.chanceRetorno}%
+                          {formatPercent(item.chanceRetorno)}
                         </span>
                       </div>
 
@@ -307,23 +333,21 @@ export default function AplicacoesRecebidasPage() {
                         <div
                           className="h-full rounded-full bg-rose-500 transition-all duration-500"
                           style={{
-                            width: `${item.chanceRetorno}%`
+                            width: `${chanceRetorno}%`
                           }}
                         />
                       </div>
                     </div>
                   </div>
 
-                  {item.motivosChanceRetorno.length > 0 ? (
+                  {returnReasons.length > 0 ? (
                     <div className="rounded-3xl border border-[var(--border)] bg-white p-5">
                       <p className="text-sm font-semibold text-[var(--text)]">
                         Principais observacoes
                       </p>
 
                       <div className="mt-4 grid gap-3">
-                        {item.motivosChanceRetorno
-                          .slice(0, 3)
-                          .map((motivo) => (
+                        {returnReasons.slice(0, 3).map((motivo) => (
                             <div
                               key={motivo}
                               className="flex items-start gap-3 rounded-2xl bg-[var(--surface-2)] p-4"

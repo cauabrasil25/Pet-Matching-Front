@@ -24,6 +24,18 @@ function statusClassName(status: StatusAplicacao) {
   return 'border-red-200 bg-red-50 text-red-700';
 }
 
+function isMetricAvailable(value: number | null | undefined): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+function formatPercent(value: number | null | undefined) {
+  return isMetricAvailable(value) ? `${Math.round(value)}%` : 'Nao calculado';
+}
+
+function getReasons(reasons: string[] | null | undefined) {
+  return Array.isArray(reasons) ? reasons.filter(Boolean) : [];
+}
+
 export default function MinhasAplicacoesPage() {
   const [applications, setApplications] = useState<AplicacaoAdocaoResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -133,97 +145,130 @@ export default function MinhasAplicacoesPage() {
 
       {!loading && !error ? (
         <section className="mt-6 space-y-5">
-          {applications.map((application) => (
-            <article
-              key={application.id}
-              className="rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow)] transition hover:-translate-y-1 hover:shadow-xl"
-            >
-              <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <h2 className="text-2xl font-bold text-[var(--text)]">
-                      {application.animalNome}
-                    </h2>
+          {applications.map((application) => {
+            const compatibilityReasons = getReasons(application.motivosCompatibilidade);
+            const returnReasons = getReasons(application.motivosChanceRetorno);
+            const hasMatch = isMetricAvailable(application.scoreMatch);
+            const hasReturnRisk = isMetricAvailable(application.chanceRetorno);
 
-                    <span
-                      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${statusClassName(application.status)}`}
-                    >
-                      {formatApplicationStatus(application.status)}
-                    </span>
+            return (
+              <article
+                key={application.id}
+                className="rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow)] transition hover:-translate-y-1 hover:shadow-xl"
+              >
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <h2 className="text-2xl font-bold text-[var(--text)]">
+                        {application.animalNome}
+                      </h2>
+
+                      <span
+                        className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${statusClassName(application.status)}`}
+                      >
+                        {formatApplicationStatus(application.status)}
+                      </span>
+                    </div>
+
+                    <p className="mt-2 text-sm text-[var(--muted)]">
+                      {application.abrigoNome}
+                    </p>
+
+                    <p className="mt-1 text-xs text-[var(--muted)]">
+                      Aplicacao #{application.id}
+                    </p>
                   </div>
 
-                  <p className="mt-2 text-sm text-[var(--muted)]">
-                    {application.abrigoNome}
-                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 text-center">
+                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--accent)]">
+                        Match
+                      </p>
 
-                  <p className="mt-1 text-xs text-[var(--muted)]">
-                    Aplicacao #{application.id}
-                  </p>
+                      <p className="mt-1 text-2xl font-bold text-[var(--text)]">
+                        {formatPercent(application.scoreMatch)}
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 text-center">
+                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--accent)]">
+                        Devolucao
+                      </p>
+
+                      <p className="mt-1 text-2xl font-bold text-[var(--text)]">
+                        {formatPercent(application.chanceRetorno)}
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex flex-wrap gap-3">
-                  <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 text-center">
-                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--accent)]">
-                      Match
-                    </p>
+                {!hasMatch || !hasReturnRisk ? (
+                  <p className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-700">
+                    Esta aplicacao ainda nao tem calculo salvo de match e devolucao.
+                    Abra o animal ou envie uma nova aplicacao depois de preencher o questionario.
+                  </p>
+                ) : null}
 
-                    <p className="mt-1 text-2xl font-bold text-[var(--text)]">
-                      {application.scoreMatch}%
-                    </p>
+                {compatibilityReasons.length > 0 ? (
+                  <div className="mt-6 rounded-2xl border border-[var(--border)] bg-[var(--surface-2)] p-5">
+                    <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">
+                      Motivos da compatibilidade
+                    </h3>
+
+                    <ul className="mt-4 space-y-3">
+                      {compatibilityReasons.slice(0, 3).map((motivo) => (
+                          <li
+                            key={motivo}
+                            className="flex items-start gap-3 text-sm leading-6 text-[var(--text)]"
+                          >
+                            <span className="mt-2 h-2 w-2 rounded-full bg-[var(--primary)]" />
+
+                            <span>{motivo}</span>
+                          </li>
+                        ))}
+                    </ul>
                   </div>
+                ) : null}
 
-                  <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 text-center">
-                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--accent)]">
-                      Retorno
-                    </p>
+                {returnReasons.length > 0 ? (
+                  <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+                    <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-amber-700">
+                      Fatores de devolucao
+                    </h3>
 
-                    <p className="mt-1 text-2xl font-bold text-[var(--text)]">
-                      {application.chanceRetorno}%
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {application.motivosCompatibilidade.length > 0 ? (
-                <div className="mt-6 rounded-2xl border border-[var(--border)] bg-[var(--surface-2)] p-5">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">
-                    Motivos da compatibilidade
-                  </h3>
-
-                  <ul className="mt-4 space-y-3">
-                    {application.motivosCompatibilidade
-                      .slice(0, 3)
-                      .map((motivo) => (
+                    <ul className="mt-4 space-y-3">
+                      {returnReasons.slice(0, 3).map((motivo) => (
                         <li
                           key={motivo}
                           className="flex items-start gap-3 text-sm leading-6 text-[var(--text)]"
                         >
-                          <span className="mt-2 h-2 w-2 rounded-full bg-[var(--primary)]" />
+                          <span className="mt-2 h-2 w-2 rounded-full bg-amber-500" />
 
                           <span>{motivo}</span>
                         </li>
                       ))}
-                  </ul>
+                    </ul>
+                  </div>
+                ) : null}
+
+                <div className="mt-6 flex flex-col gap-3 border-t border-[var(--border)] pt-5 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm text-[var(--muted)]">
+                    Status atual:{' '}
+                    <span className="font-semibold text-[var(--text)]">
+                      {formatApplicationStatus(application.status)}
+                    </span>
+                  </p>
+
+                  <Link
+                    href={`/animais/${application.animalId}`}
+                    className="inline-flex items-center justify-center rounded-full bg-[var(--primary)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--primary-strong)]"
+                  >
+                    Ver animal
+                  </Link>
                 </div>
-              ) : null}
-
-              <div className="mt-6 flex flex-col gap-3 border-t border-[var(--border)] pt-5 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm text-[var(--muted)]">
-                  Status atual:{' '}
-                  <span className="font-semibold text-[var(--text)]">
-                    {formatApplicationStatus(application.status)}
-                  </span>
-                </p>
-
-                <Link
-                  href={`/animais/${application.animalId}`}
-                  className="inline-flex items-center justify-center rounded-full bg-[var(--primary)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--primary-strong)]"
-                >
-                  Ver animal
-                </Link>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
 
           {applications.length === 0 ? (
             <section className="rounded-[28px] border border-dashed border-[var(--border)] bg-[var(--surface)] p-12 text-center shadow-[var(--shadow)]">

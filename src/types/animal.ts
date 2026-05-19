@@ -58,3 +58,9 @@ export type AnimalMatchResponse = {
   chanceRetorno: number;
   explicacoes: string[];
 };
+
+export type ChanceRetornoResponse = {
+  animal: AnimalResponse;
+  chanceRetorno: number;
+  explicacoes: string[];
+};

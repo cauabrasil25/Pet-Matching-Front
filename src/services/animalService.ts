@@ -1,5 +1,13 @@
 import { apiClient } from './apiClient';
-import type { AnimalFiltroRequest, AnimalResponse, CriarAnimalRequest, AtualizarAnimalRequest, AtualizarStatusAnimalRequest, AnimalMatchResponse } from '../types/animal';
+import type {
+  AnimalFiltroRequest,
+  AnimalResponse,
+  CriarAnimalRequest,
+  AtualizarAnimalRequest,
+  AtualizarStatusAnimalRequest,
+  AnimalMatchResponse,
+  ChanceRetornoResponse
+} from '../types/animal';
 
 export const animalService = {
   listar: (filtro?: AnimalFiltroRequest) => {
@@ -13,6 +21,7 @@ export const animalService = {
     return apiClient<AnimalResponse[]>(`/api/animais${suffix}`);
   },
   listarComMatching: () => apiClient<AnimalMatchResponse[]>('/api/matching/animais'),
+  calcularChanceRetorno: (id: string) => apiClient<ChanceRetornoResponse>(`/api/matching/animais/${id}/chance-retorno`),
   buscarPorId: (id: string) => apiClient<AnimalResponse>(`/api/animais/${id}`),
   cadastrar: (payload: CriarAnimalRequest) => apiClient<AnimalResponse>('/api/animais', {
     method: 'POST',

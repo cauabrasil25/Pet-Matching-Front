@@ -15,9 +15,9 @@ export type AplicacaoAdocaoResponse = {
   abrigoNome: string;
   dataAplicacao: string;
   status: StatusAplicacao;
-  scoreMatch: number;
-  adotanteCompativel: boolean;
-  chanceRetorno: number;
-  motivosCompatibilidade: string[];
-  motivosChanceRetorno: string[];
+  scoreMatch: number | null;
+  adotanteCompativel: boolean | null;
+  chanceRetorno: number | null;
+  motivosCompatibilidade: string[] | null;
+  motivosChanceRetorno: string[] | null;
 };
