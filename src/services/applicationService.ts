@@ -1,23 +1,25 @@
 import { apiClient } from './apiClient';
-import type { AplicacaoAdocaoResponse, CriarAplicacaoAdocaoRequest, StatusAplicacao } from '../types/application';
+import type { CandidaturaProjetoResponse, CriarCandidaturaProjetoRequest, StatusAplicacao } from '../types/application';
 
-export const applicationService = {
-  criar: (payload: CriarAplicacaoAdocaoRequest) => apiClient<AplicacaoAdocaoResponse>('/api/aplicacoes-adocao', {
+export const candidaturaService = {
+  criar: (payload: CriarCandidaturaProjetoRequest) => apiClient<CandidaturaProjetoResponse>('/api/candidaturas-projeto', {
     method: 'POST',
     body: JSON.stringify(payload)
   }),
   listarMinhas: (status?: StatusAplicacao) => {
     const suffix = status ? `?status=${status}` : '';
-    return apiClient<AplicacaoAdocaoResponse[]>(`/api/aplicacoes-adocao/minhas${suffix}`);
+    return apiClient<CandidaturaProjetoResponse[]>(`/api/candidaturas-projeto/minhas${suffix}`);
   },
   listarRecebidas: (status?: StatusAplicacao) => {
     const suffix = status ? `?status=${status}` : '';
-    return apiClient<AplicacaoAdocaoResponse[]>(`/api/aplicacoes-adocao/recebidas${suffix}`);
+    return apiClient<CandidaturaProjetoResponse[]>(`/api/candidaturas-projeto/recebidas${suffix}`);
   },
-  aprovar: (id: string) => apiClient<AplicacaoAdocaoResponse>(`/api/aplicacoes-adocao/${id}/aprovar`, {
+  aprovar: (id: string) => apiClient<CandidaturaProjetoResponse>(`/api/candidaturas-projeto/${id}/aprovar`, {
     method: 'PATCH'
   }),
-  recusar: (id: string) => apiClient<AplicacaoAdocaoResponse>(`/api/aplicacoes-adocao/${id}/recusar`, {
+  recusar: (id: string) => apiClient<CandidaturaProjetoResponse>(`/api/candidaturas-projeto/${id}/recusar`, {
     method: 'PATCH'
   })
 };
+
+export const applicationService = candidaturaService;

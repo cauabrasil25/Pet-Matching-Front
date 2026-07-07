@@ -1,877 +1,102 @@
 "use client";
 
-import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { AppShell } from '../../../components/layout/AppShell';
+import { getCurrentUser } from '../../../services/authService';
+import { candidaturaService } from '../../../services/applicationService';
+import { projetoService } from '../../../services/animalService';
+import type { ProjetoPesquisaResponse } from '../../../types/animal';
 
-import {
-  PawPrint,
-  Heart,
-  ShieldCheck,
-  Activity,
-  Volume2,
-  Weight,
-  Calendar,
-  ArrowLeft,
-  Sparkles,
-  CheckCircle2,
-} from "lucide-react";
-
-import { AppShell } from "../../../components/layout/AppShell";
-
-import { getCurrentUser } from "../../../services/authService";
-import { applicationService } from "../../../services/applicationService";
-import { animalService } from "../../../services/animalService";
-
-import type {
-  AnimalMatchResponse,
-  AnimalResponse,
-  ChanceRetornoResponse,
-} from "../../../types/animal";
-import type {
-  AplicacaoAdocaoResponse,
-  StatusAplicacao,
-} from "../../../types/application";
-
-function formatLabel(value?: string | null) {
-  if (!value) return "Não informado";
-
-  return value
-    .toLowerCase()
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (char) =>
-      char.toUpperCase()
-    );
-}
-
-function formatBoolean(value?: boolean) {
-  return value ? "Sim" : "Não";
-}
-
-function isMetricAvailable(
-  value: number | null | undefined
-): value is number {
-  return (
-    typeof value === "number" &&
-    Number.isFinite(value)
-  );
-}
-
-function formatPercent(
-  value: number | null | undefined
-) {
-  return isMetricAvailable(value)
-    ? `${Math.round(value)}%`
-    : "Não calculado";
-}
-
-function getReasons(
-  reasons: string[] | null | undefined
-) {
-  return Array.isArray(reasons)
-    ? reasons.filter(Boolean)
-    : [];
-}
-
-function formatApplicationStatus(
-  status?: StatusAplicacao
-) {
-  if (status === "APROVADA") return "Aprovada";
-  if (status === "PENDENTE") return "Pendente";
-  if (status === "DESISTENCIA") return "Desistência";
-  if (status === "RECUSADA") return "Recusada";
-  return "Não enviada";
-}
-
-function InfoItem({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="flex items-center gap-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
-      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm">
-        {icon}
-      </div>
-
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-          {label}
-        </p>
-
-        <p className="mt-1 text-sm font-semibold text-zinc-900">
-          {value}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function Badge({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <span className="inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-700">
-      {children}
-    </span>
-  );
-}
-
-export default function AnimalDetailPage() {
+export default function ProjetoDetailPage() {
   const params = useParams<{ id: string }>();
-
-  const animalId = Array.isArray(params.id)
-    ? params.id[0]
-    : params.id;
-
-  const [animal, setAnimal] =
-    useState<AnimalResponse | null>(null);
-
-  const [loading, setLoading] =
-    useState(true);
-
-  const [error, setError] =
-    useState("");
-
-  const [isAdopter, setIsAdopter] =
-    useState(false);
-
-  const [submitLoading, setSubmitLoading] =
-    useState(false);
-
-  const [submitError, setSubmitError] =
-    useState("");
-
-  const [submitSuccess, setSubmitSuccess] =
-    useState("");
-
-  const [applicationForAnimal, setApplicationForAnimal] =
-    useState<AplicacaoAdocaoResponse | null>(null);
-
-  const [matchPreview, setMatchPreview] =
-    useState<AnimalMatchResponse | null>(null);
-
-  const [returnPreview, setReturnPreview] =
-    useState<ChanceRetornoResponse | null>(null);
-
-  const [matchLoading, setMatchLoading] =
-    useState(false);
-
-  const [matchError, setMatchError] =
-    useState("");
+  const projetoId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const [projeto, setProjeto] = useState<ProjetoPesquisaResponse | null>(null);
+  const [isAluno, setIsAluno] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    const user = getCurrentUser();
-
-    setIsAdopter(
-      user?.role === "ADOTANTE"
-    );
+    setIsAluno(getCurrentUser()?.role === 'ALUNO');
   }, []);
 
   useEffect(() => {
     let active = true;
-
-    async function loadAnimal() {
-      if (!animalId) {
-        setError("Animal inválido.");
-        setLoading(false);
-        return;
-      }
-
+    async function loadProjeto() {
       try {
         setLoading(true);
-        setError("");
-
-        const data =
-          await animalService.buscarPorId(
-            animalId
-          );
-
-        if (active) {
-          setAnimal(data);
-        }
+        setError('');
+        const data = await projetoService.buscarPorId(projetoId);
+        if (active) setProjeto(data);
       } catch (loadError) {
-        if (active) {
-          const message =
-            loadError instanceof Error
-              ? loadError.message
-              : "Não foi possível carregar o animal.";
-
-          setError(message);
-        }
+        if (active) setError(loadError instanceof Error ? loadError.message : 'Nao foi possivel carregar o projeto.');
       } finally {
-        if (active) {
-          setLoading(false);
-        }
+        if (active) setLoading(false);
       }
     }
-
-    loadAnimal();
-
+    if (projetoId) loadProjeto();
     return () => {
       active = false;
     };
-  }, [animalId]);
+  }, [projetoId]);
 
-  useEffect(() => {
-    let active = true;
-
-    async function loadAdoptionInsight() {
-      setApplicationForAnimal(null);
-      setMatchPreview(null);
-      setReturnPreview(null);
-      setMatchError("");
-
-      if (!animalId || !isAdopter) {
-        setMatchLoading(false);
-        return;
-      }
-
-      try {
-        setMatchLoading(true);
-
-        const applications =
-          await applicationService.listarMinhas();
-
-        if (!active) {
-          return;
-        }
-
-        const currentApplication =
-          applications.find(
-            (application) =>
-              application.animalId === animalId
-          ) ?? null;
-
-        setApplicationForAnimal(
-          currentApplication
-        );
-
-        const needsPreview =
-          !currentApplication ||
-          !isMetricAvailable(
-            currentApplication.scoreMatch
-          ) ||
-          !isMetricAvailable(
-            currentApplication.chanceRetorno
-          ) ||
-          getReasons(
-            currentApplication
-              .motivosChanceRetorno
-          ).length === 0;
-
-        if (!needsPreview) {
-          return;
-        }
-
-        const [matchingResult, returnResult] =
-          await Promise.allSettled([
-            animalService.listarComMatching(),
-            animalService.calcularChanceRetorno(
-              animalId
-            ),
-          ]);
-
-        if (!active) {
-          return;
-        }
-
-        if (
-          matchingResult.status ===
-          "fulfilled"
-        ) {
-          setMatchPreview(
-            matchingResult.value.find(
-              (item) =>
-                item.animal.id === animalId
-            ) ?? null
-          );
-        }
-
-        if (
-          returnResult.status === "fulfilled"
-        ) {
-          setReturnPreview(returnResult.value);
-        }
-      } catch (insightError) {
-        if (active) {
-          const message =
-            insightError instanceof Error
-              ? insightError.message
-              : "Não foi possível carregar o match deste animal.";
-
-          setMatchError(message);
-        }
-      } finally {
-        if (active) {
-          setMatchLoading(false);
-        }
-      }
-    }
-
-    loadAdoptionInsight();
-
-    return () => {
-      active = false;
-    };
-  }, [animalId, isAdopter]);
-
-  async function handleApply() {
-    if (!animal) {
-      setSubmitError(
-        "Animal indisponível no momento."
-      );
-
-      return;
-    }
-
+  async function candidatar() {
     try {
-      setSubmitLoading(true);
-      setSubmitError("");
-      setSubmitSuccess("");
-
-      const createdApplication =
-        await applicationService.criar({
-          animalId: animal.id,
-        });
-
-      setApplicationForAnimal(
-        createdApplication
-      );
-      setMatchPreview(null);
-      setReturnPreview(null);
-      setSubmitSuccess(
-        "Aplicação enviada com sucesso!"
-      );
-    } catch (applyError) {
-      const errorMessage =
-        applyError instanceof Error
-          ? applyError.message
-          : "Não foi possível enviar sua aplicação.";
-
-      setSubmitError(errorMessage);
+      setSaving(true);
+      setError('');
+      await candidaturaService.criar({ projetoId });
+      setMessage('Candidatura enviada com sucesso.');
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : 'Nao foi possivel enviar a candidatura.');
     } finally {
-      setSubmitLoading(false);
+      setSaving(false);
     }
   }
-
-  if (loading) {
-    return (
-      <AppShell
-        eyebrow="Detalhes"
-        title="Carregando animal"
-        description="Buscando informações..."
-        secondaryAction={{
-          label: "Voltar",
-          href: "/animais",
-        }}
-      >
-        <div className="rounded-[32px] border border-zinc-200 bg-white p-16 text-center shadow-lg">
-          <div className="mx-auto h-14 w-14 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600" />
-
-          <p className="mt-6 text-sm text-zinc-500">
-            Carregando detalhes do animal...
-          </p>
-        </div>
-      </AppShell>
-    );
-  }
-
-  if (error || !animal) {
-    return (
-      <AppShell
-        eyebrow="Erro"
-        title="Animal não encontrado"
-        description="Não foi possível carregar este animal."
-        secondaryAction={{
-          label: "Voltar",
-          href: "/animais",
-        }}
-      >
-        <div className="rounded-[32px] border border-red-200 bg-red-50 p-10 text-center shadow-lg">
-          <p className="font-medium text-red-700">
-            {error ||
-              "Animal não encontrado."}
-          </p>
-        </div>
-      </AppShell>
-    );
-  }
-
-  const insightScore =
-    applicationForAnimal?.scoreMatch ??
-    matchPreview?.score ??
-    null;
-
-  const insightReturnRisk =
-    applicationForAnimal?.chanceRetorno ??
-    returnPreview?.chanceRetorno ??
-    matchPreview?.chanceRetorno ??
-    null;
-
-  const compatibilityReasons = getReasons(
-    applicationForAnimal
-      ?.motivosCompatibilidade ??
-      matchPreview?.explicacoes
-  );
-
-  const returnReasons = getReasons(
-    applicationForAnimal
-      ?.motivosChanceRetorno ??
-      returnPreview?.explicacoes
-  );
-
-  const hasAdoptionInsight =
-    isMetricAvailable(insightScore) ||
-    isMetricAvailable(insightReturnRisk) ||
-    compatibilityReasons.length > 0 ||
-    returnReasons.length > 0 ||
-    Boolean(applicationForAnimal);
 
   return (
-    <AppShell
-      eyebrow="Detalhes"
-      title={animal.nome}
-      description="Conheça mais sobre este pet."
-      secondaryAction={{
-        label: "Voltar",
-        href: "/animais",
-      }}
-    >
-      <div className="mb-6">
-        <Link
-          href="/animais"
-          className="inline-flex items-center gap-2 text-sm font-medium text-zinc-500 transition hover:text-zinc-900"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Voltar ao catálogo
-        </Link>
-      </div>
-
-      <section className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-        {/* LEFT */}
-        <article className="overflow-hidden rounded-[36px] border border-zinc-200 bg-white shadow-xl">
-          {/* HERO */}
-          <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-100 via-white to-amber-100">
-            <div className="absolute -top-20 right-0 h-72 w-72 rounded-full bg-emerald-200/30 blur-3xl" />
-
-            <div className="absolute bottom-0 left-0 h-72 w-72 rounded-full bg-amber-200/30 blur-3xl" />
-
-            <span className="relative text-9xl font-black uppercase text-emerald-600/80">
-              {animal.nome.slice(0, 1)}
-            </span>
-
-            <div className="absolute left-5 top-5 rounded-full bg-white/90 px-4 py-2 text-xs font-bold text-zinc-800 shadow-lg backdrop-blur">
-              {formatLabel(animal.status)}
+    <AppShell eyebrow="Projeto" title={projeto?.titulo ?? 'Detalhes do projeto'} description="Informacoes completas da oportunidade de pesquisa.">
+      {loading ? <p className="text-sm text-[var(--muted)]">Carregando...</p> : null}
+      {error ? <p className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</p> : null}
+      {projeto ? (
+        <article className="rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[var(--shadow)]">
+          <p className="text-sm font-semibold text-[var(--accent)]">{projeto.areaTematica}</p>
+          <h2 className="mt-2 text-3xl font-black">{projeto.titulo}</h2>
+          <p className="mt-4 leading-7 text-[var(--muted)]">{projeto.descricao}</p>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Info label="Professor" value={projeto.professorNome} />
+            <Info label="Curso preferencial" value={projeto.cursoPreferencial ?? 'Nao informado'} />
+            <Info label="Periodo minimo" value={`${projeto.periodoMinimo}`} />
+            <Info label="Carga horaria" value={`${projeto.cargaHorariaSemanal}h/semana`} />
+            <Info label="Duracao" value={`${projeto.duracaoMeses} meses`} />
+            <Info label="Vagas" value={`${projeto.vagasPreenchidas}/${projeto.numeroVagas}`} />
+            <Info label="Experiencia previa" value={projeto.requerExperienciaPrevia ? 'Sim' : 'Nao'} />
+            <Info label="Status" value={projeto.status} />
+          </div>
+          <div className="mt-6">
+            <h3 className="font-bold">Habilidades requeridas</h3>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {projeto.habilidadesRequeridas.map((habilidade) => <span key={habilidade} className="rounded-full bg-[var(--surface-2)] px-3 py-1 text-sm">{habilidade}</span>)}
             </div>
           </div>
-
-          {/* CONTENT */}
-          <div className="p-8">
-            <div className="flex flex-wrap gap-2">
-              <Badge>
-                {formatLabel(animal.especie)}
-              </Badge>
-
-              <Badge>
-                {formatLabel(animal.porte)}
-              </Badge>
-
-              <Badge>
-                {animal.idade} anos
-              </Badge>
-
-              {animal.temDeficienciaFisica && (
-                <Badge>
-                  Necessidades especiais
-                </Badge>
-              )}
-
-              {animal.temDoencaCronica && (
-                <Badge>
-                  Acompanhamento médico
-                </Badge>
-              )}
-            </div>
-
-            <h1 className="mt-6 text-4xl font-black tracking-tight text-zinc-900">
-              {animal.nome}
-            </h1>
-
-            <p className="mt-5 text-base leading-8 text-zinc-600">
-              Este pet está pronto para encontrar um novo lar cheio de carinho.
-            </p>
-
-            {/* INFO GRID */}
-            <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              <InfoItem
-                icon={
-                  <Activity className="h-5 w-5 text-emerald-600" />
-                }
-                label="Energia"
-                value={formatLabel(
-                  animal.nivelEnergia ??
-                    "MEDIO"
-                )}
-              />
-
-              <InfoItem
-                icon={
-                  <Volume2 className="h-5 w-5 text-emerald-600" />
-                }
-                label="Barulho"
-                value={formatLabel(
-                  animal.nivelBarulho ??
-                    "BAIXO"
-                )}
-              />
-
-              <InfoItem
-                icon={
-                  <Weight className="h-5 w-5 text-emerald-600" />
-                }
-                label="Peso"
-                value={`${animal.peso.toFixed(
-                  1
-                )} kg`}
-              />
-
-              <InfoItem
-                icon={
-                  <Calendar className="h-5 w-5 text-emerald-600" />
-                }
-                label="Idade"
-                value={`${animal.idade} anos`}
-              />
-            </div>
-
-            {/* SOCIAL */}
-            <div className="mt-8 rounded-3xl border border-zinc-200 bg-zinc-50 p-6">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-emerald-600" />
-
-                <h2 className="font-bold text-zinc-900">
-                  Temperamento
-                </h2>
-              </div>
-
-              <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl bg-white p-4 text-center">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                    Estranhos
-                  </p>
-
-                  <p className="mt-2 text-lg font-bold text-zinc-900">
-                    {formatBoolean(
-                      animal.sociavelEstranhos
-                    )}
-                  </p>
-                </div>
-
-                <div className="rounded-2xl bg-white p-4 text-center">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                    Crianças
-                  </p>
-
-                  <p className="mt-2 text-lg font-bold text-zinc-900">
-                    {formatBoolean(
-                      animal.sociavelCriancas
-                    )}
-                  </p>
-                </div>
-
-                <div className="rounded-2xl bg-white p-4 text-center">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                    Outros animais
-                  </p>
-
-                  <p className="mt-2 text-lg font-bold text-zinc-900">
-                    {formatBoolean(
-                      animal.sociavelAnimais
-                    )}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </article>
-
-        {/* RIGHT */}
-        <aside className="space-y-6">
-          {isAdopter ? (
-            <div className="rounded-[36px] border border-zinc-200 bg-white p-8 shadow-lg">
-              <div className="flex items-center gap-3">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100">
-                  <Sparkles className="h-7 w-7 text-emerald-700" />
-                </div>
-
-                <div>
-                  <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700">
-                    Seu match
-                  </p>
-
-                  <h2 className="text-2xl font-black text-zinc-900">
-                    Compatibilidade
-                  </h2>
-                </div>
-              </div>
-
-              {matchLoading ? (
-                <div className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-5 text-center">
-                  <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600" />
-
-                  <p className="mt-4 text-sm text-zinc-500">
-                    Calculando match e devolução...
-                  </p>
-                </div>
-              ) : null}
-
-              {matchError ? (
-                <p className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-700">
-                  {matchError}
-                </p>
-              ) : null}
-
-              {!matchLoading &&
-              !matchError &&
-              hasAdoptionInsight ? (
-                <>
-                  {applicationForAnimal ? (
-                    <p className="mt-5 text-sm leading-7 text-zinc-600">
-                      Você já enviou uma aplicação para este animal.
-                      Status atual:{" "}
-                      <strong>
-                        {formatApplicationStatus(
-                          applicationForAnimal.status
-                        )}
-                      </strong>
-                      .
-                    </p>
-                  ) : (
-                    <p className="mt-5 text-sm leading-7 text-zinc-600">
-                      Estes números são calculados com base no seu questionário.
-                      Quanto menor a devolução, melhor.
-                    </p>
-                  )}
-
-                  <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-center">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-                        Match
-                      </p>
-
-                      <p className="mt-2 text-3xl font-black text-emerald-700">
-                        {formatPercent(insightScore)}
-                      </p>
-                    </div>
-
-                    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-center">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
-                        Devolução
-                      </p>
-
-                      <p className="mt-2 text-3xl font-black text-amber-700">
-                        {formatPercent(insightReturnRisk)}
-                      </p>
-                    </div>
-                  </div>
-
-                  {compatibilityReasons.length > 0 ? (
-                    <div className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
-                      <p className="text-xs font-bold uppercase tracking-wide text-zinc-500">
-                        Por que deu match?
-                      </p>
-
-                      <ul className="mt-4 space-y-3">
-                        {compatibilityReasons
-                          .slice(0, 3)
-                          .map((reason) => (
-                            <li
-                              key={reason}
-                              className="flex gap-3 text-sm leading-6 text-zinc-600"
-                            >
-                              <ShieldCheck className="mt-0.5 h-4 w-4 text-emerald-600" />
-
-                              <span>{reason}</span>
-                            </li>
-                          ))}
-                      </ul>
-                    </div>
-                  ) : null}
-
-                  {returnReasons.length > 0 ? (
-                    <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-5">
-                      <p className="text-xs font-bold uppercase tracking-wide text-amber-700">
-                        Fatores de devolução
-                      </p>
-
-                      <ul className="mt-4 space-y-3">
-                        {returnReasons
-                          .slice(0, 3)
-                          .map((reason) => (
-                            <li
-                              key={reason}
-                              className="flex gap-3 text-sm leading-6 text-zinc-600"
-                            >
-                              <ShieldCheck className="mt-0.5 h-4 w-4 text-amber-600" />
-
-                              <span>{reason}</span>
-                            </li>
-                          ))}
-                      </ul>
-                    </div>
-                  ) : null}
-                </>
-              ) : null}
-
-              {!matchLoading &&
-              !matchError &&
-              !hasAdoptionInsight ? (
-                <p className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-700">
-                  Preencha o questionário de adotante para ver a porcentagem de
-                  match e a chance de devolução deste animal.
-                </p>
-              ) : null}
-            </div>
+          {isAluno ? (
+            <button className="mt-6 rounded-full bg-[var(--primary)] px-5 py-3 font-semibold text-white disabled:opacity-70" onClick={candidatar} disabled={saving || projeto.status !== 'ABERTO'}>
+              {saving ? 'Enviando...' : 'Candidatar-se'}
+            </button>
           ) : null}
-
-          <div className="rounded-[36px] border border-zinc-200 bg-gradient-to-br from-emerald-50 to-white p-8 shadow-xl">
-            <div className="flex items-center gap-3">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-md">
-                <PawPrint className="h-7 w-7 text-emerald-600" />
-              </div>
-
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700">
-                  Adoção
-                </p>
-
-                <h2 className="text-2xl font-black text-zinc-900">
-                  Próximo passo
-                </h2>
-              </div>
-            </div>
-
-            {isAdopter ? (
-              <>
-                {applicationForAnimal ? (
-                  <p className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-7 text-emerald-700">
-                    Sua aplicação para este animal já foi enviada.
-                    Você pode acompanhar o andamento em Minhas aplicações.
-                  </p>
-                ) : (
-                  <>
-                    <p className="mt-6 text-sm leading-7 text-zinc-600">
-                      Gostou deste pet? Envie
-                      agora sua aplicação para
-                      adoção.
-                    </p>
-
-                    <button
-                      type="button"
-                      onClick={handleApply}
-                      disabled={submitLoading || matchLoading}
-                      className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-5 py-4 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all hover:-translate-y-0.5 hover:shadow-xl disabled:opacity-70"
-                    >
-                      <Heart className="h-4 w-4" />
-
-                      {submitLoading
-                        ? "Enviando..."
-                        : matchLoading
-                          ? "Verificando..."
-                        : "Enviar aplicação"}
-                    </button>
-                  </>
-                )}
-
-                <Link
-                  href="/adotante/aplicacoes"
-                  className="mt-4 inline-flex w-full items-center justify-center rounded-2xl border border-zinc-200 bg-white px-5 py-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
-                >
-                  Minhas aplicações
-                </Link>
-
-                {submitError && (
-                  <p className="mt-4 text-sm text-red-700">
-                    {submitError}
-                  </p>
-                )}
-
-                {submitSuccess && (
-                  <div className="mt-4 flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
-                    <CheckCircle2 className="h-5 w-5 shrink-0" />
-
-                    {submitSuccess}
-                  </div>
-                )}
-              </>
-            ) : (
-              <>
-                <p className="mt-6 text-sm leading-7 text-zinc-600">
-                  Faça login como adotante
-                  para enviar aplicações e
-                  acompanhar o processo.
-                </p>
-
-                <div className="mt-8 flex flex-col gap-4">
-                  <Link
-                    href="/login"
-                    className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-5 py-4 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all hover:-translate-y-0.5 hover:shadow-xl"
-                  >
-                    Entrar
-                  </Link>
-
-                  <Link
-                    href="/adotante/questionario"
-                    className="inline-flex items-center justify-center rounded-2xl border border-zinc-200 bg-white px-5 py-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
-                  >
-                    Fazer questionário
-                  </Link>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* EXTRA */}
-          <div className="rounded-[36px] border border-zinc-200 bg-white p-8 shadow-lg">
-            <h3 className="text-lg font-bold text-zinc-900">
-              Sobre a adoção
-            </h3>
-
-            <p className="mt-4 text-sm leading-7 text-zinc-600">
-              Todos os pets cadastrados
-              passam por acompanhamento
-              veterinário e análise do
-              abrigo responsável.
-            </p>
-
-            <div className="mt-6 space-y-4">
-              <div className="flex gap-3">
-                <ShieldCheck className="mt-1 h-5 w-5 text-emerald-600" />
-
-                <p className="text-sm text-zinc-600">
-                  Processo seguro e
-                  acompanhado.
-                </p>
-              </div>
-
-              <div className="flex gap-3">
-                <Heart className="mt-1 h-5 w-5 text-emerald-600" />
-
-                <p className="text-sm text-zinc-600">
-                  Acompanhamento pós-adoção.
-                </p>
-              </div>
-            </div>
-          </div>
-        </aside>
-      </section>
+          {message ? <p className="mt-4 text-sm text-[var(--primary-strong)]">{message}</p> : null}
+        </article>
+      ) : null}
     </AppShell>
+  );
+}
+
+function Info({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-3)] p-4">
+      <p className="text-xs font-semibold uppercase text-[var(--muted)]">{label}</p>
+      <p className="mt-1 font-semibold">{value}</p>
+    </div>
   );
 }

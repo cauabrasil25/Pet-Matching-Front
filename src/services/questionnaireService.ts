@@ -1,17 +1,17 @@
 import { apiClient } from './apiClient';
-import type { CriarQuestionarioPerfilRequest, QuestionarioPerfilResponse } from '../types/questionnaire';
+import type { CriarQuestionarioAlunoRequest, QuestionarioAlunoResponse } from '../types/questionnaire';
 
 export const questionnaireService = {
-  buscar: () => apiClient<QuestionarioPerfilResponse>('/api/questionario-perfil'),
-  cadastrar: (payload: CriarQuestionarioPerfilRequest) => apiClient<QuestionarioPerfilResponse>('/api/questionario-perfil', {
+  buscar: () => apiClient<QuestionarioAlunoResponse>('/api/questionario-aluno'),
+  cadastrar: (payload: CriarQuestionarioAlunoRequest) => apiClient<QuestionarioAlunoResponse>('/api/questionario-aluno', {
     method: 'POST',
     body: JSON.stringify(payload)
   }),
-  atualizar: (payload: CriarQuestionarioPerfilRequest) => apiClient<QuestionarioPerfilResponse>('/api/questionario-perfil', {
+  atualizar: (payload: CriarQuestionarioAlunoRequest) => apiClient<QuestionarioAlunoResponse>('/api/questionario-aluno', {
     method: 'PUT',
     body: JSON.stringify(payload)
   }),
-  deletar: () => apiClient<void>('/api/questionario-perfil', {
+  deletar: () => apiClient<void>('/api/questionario-aluno', {
     method: 'DELETE'
   })
 };

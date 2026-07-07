@@ -50,8 +50,8 @@ export function AppShell({
     };
   }, []);
 
-  const showAdotanteLink = sessionLoaded && currentRole !== 'ABRIGO';
-  const showAbrigoLink = sessionLoaded && currentRole !== 'ADOTANTE';
+  const showAlunoLink = sessionLoaded && currentRole !== 'PROFESSOR';
+  const showProfessorLink = sessionLoaded && currentRole !== 'ALUNO';
 
   return (
     <div className="app-frame">
@@ -84,12 +84,12 @@ export function AppShell({
         <nav className="app-nav">
           <div className="nav-group">
             <Link className="nav-link" href="/">Home</Link>
-            <Link className="nav-link" href="/animais">Animais</Link>
-            {showAdotanteLink ? (
-              <Link className="nav-link" href="/adotante/dashboard">Adotante</Link>
+            <Link className="nav-link" href="/animais">Projetos</Link>
+            {showAlunoLink ? (
+              <Link className="nav-link" href="/adotante/dashboard">Aluno</Link>
             ) : null}
-            {showAbrigoLink ? (
-              <Link className="nav-link" href="/abrigo/dashboard">Abrigo</Link>
+            {showProfessorLink ? (
+              <Link className="nav-link" href="/abrigo/dashboard">Professor</Link>
             ) : null}
           </div>
         </nav>

@@ -1,295 +1,60 @@
 "use client";
 
-import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { AppShell } from '../../../components/layout/AppShell';
-import { applicationService } from '../../../services/applicationService';
-import type { AplicacaoAdocaoResponse, StatusAplicacao } from '../../../types/application';
+import { candidaturaService } from '../../../services/applicationService';
+import type { CandidaturaProjetoResponse } from '../../../types/application';
 
-function formatApplicationStatus(status: StatusAplicacao) {
-  if (status === 'APROVADA') return 'Aprovada';
-  if (status === 'PENDENTE') return 'Pendente';
-  return 'Recusada';
-}
-
-function statusClassName(status: StatusAplicacao) {
-  if (status === 'APROVADA') {
-    return 'border-green-200 bg-green-50 text-green-700';
-  }
-
-  if (status === 'PENDENTE') {
-    return 'border-amber-200 bg-amber-50 text-amber-700';
-  }
-
-  return 'border-red-200 bg-red-50 text-red-700';
-}
-
-function isMetricAvailable(value: number | null | undefined): value is number {
-  return typeof value === 'number' && Number.isFinite(value);
-}
-
-function formatPercent(value: number | null | undefined) {
-  return isMetricAvailable(value) ? `${Math.round(value)}%` : 'Nao calculado';
-}
-
-function getReasons(reasons: string[] | null | undefined) {
-  return Array.isArray(reasons) ? reasons.filter(Boolean) : [];
-}
-
-export default function MinhasAplicacoesPage() {
-  const [applications, setApplications] = useState<AplicacaoAdocaoResponse[]>([]);
+export default function MinhasCandidaturasPage() {
+  const [items, setItems] = useState<CandidaturaProjetoResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     let active = true;
-
-    async function loadData() {
+    async function load() {
       try {
         setLoading(true);
         setError('');
-
-        const applicationsData = await applicationService.listarMinhas();
-
-        if (active) {
-          setApplications(applicationsData);
-        }
+        const data = await candidaturaService.listarMinhas();
+        if (active) setItems(data);
       } catch (loadError) {
-        if (active) {
-          const message =
-            loadError instanceof Error
-              ? loadError.message
-              : 'Nao foi possivel carregar as aplicacoes.';
-
-          setError(message);
-        }
+        if (active) setError(loadError instanceof Error ? loadError.message : 'Nao foi possivel carregar candidaturas.');
       } finally {
-        if (active) {
-          setLoading(false);
-        }
+        if (active) setLoading(false);
       }
     }
-
-    loadData();
-
+    load();
     return () => {
       active = false;
     };
   }, []);
 
-  const approvedCount = applications.filter(
-    (application) => application.status === 'APROVADA'
-  ).length;
-
-  const pendingCount = applications.filter(
-    (application) => application.status === 'PENDENTE'
-  ).length;
-
   return (
-    <AppShell
-      eyebrow="Adotante"
-      title="Minhas aplicacoes"
-      description="Acompanhe o andamento das candidaturas enviadas."
-      secondaryAction={{
-        label: 'Questionario',
-        href: '/adotante/questionario'
-      }}
-    >
-      <section className="grid gap-4 md:grid-cols-3">
-        <article className="rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow)]">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-            Total
-          </p>
-
-          <p className="mt-3 text-3xl font-bold text-[var(--text)]">
-            {applications.length}
-          </p>
-        </article>
-
-        <article className="rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow)]">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-            Aprovadas
-          </p>
-
-          <p className="mt-3 text-3xl font-bold text-green-700">
-            {approvedCount}
-          </p>
-        </article>
-
-        <article className="rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow)]">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-            Pendentes
-          </p>
-
-          <p className="mt-3 text-3xl font-bold text-amber-700">
-            {pendingCount}
-          </p>
-        </article>
+    <AppShell eyebrow="Aluno" title="Minhas candidaturas" description="Acompanhe o status das candidaturas enviadas para projetos." primaryAction={{ label: 'Explorar projetos', href: '/animais' }}>
+      {loading ? <p className="text-sm text-[var(--muted)]">Carregando...</p> : null}
+      {error ? <p className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</p> : null}
+      <section className="grid gap-4">
+        {items.map((item) => <CandidaturaCard key={item.id} candidatura={item} />)}
+        {!loading && items.length === 0 ? <p className="rounded-2xl border border-[var(--border)] bg-white p-6 text-sm text-[var(--muted)]">Nenhuma candidatura enviada.</p> : null}
       </section>
-
-      {loading ? (
-        <section className="mt-6 rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-10 text-center shadow-[var(--shadow)]">
-          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-[var(--border)] border-t-[var(--primary)]" />
-
-          <p className="mt-4 text-sm text-[var(--muted)]">
-            Carregando aplicacoes...
-          </p>
-        </section>
-      ) : null}
-
-      {error ? (
-        <section className="mt-6 rounded-[28px] border border-red-200 bg-red-50 p-8 text-center shadow-[var(--shadow)]">
-          <p className="text-sm font-medium text-red-700">{error}</p>
-        </section>
-      ) : null}
-
-      {!loading && !error ? (
-        <section className="mt-6 space-y-5">
-          {applications.map((application) => {
-            const compatibilityReasons = getReasons(application.motivosCompatibilidade);
-            const returnReasons = getReasons(application.motivosChanceRetorno);
-            const hasMatch = isMetricAvailable(application.scoreMatch);
-            const hasReturnRisk = isMetricAvailable(application.chanceRetorno);
-
-            return (
-              <article
-                key={application.id}
-                className="rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow)] transition hover:-translate-y-1 hover:shadow-xl"
-              >
-                <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <h2 className="text-2xl font-bold text-[var(--text)]">
-                        {application.animalNome}
-                      </h2>
-
-                      <span
-                        className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${statusClassName(application.status)}`}
-                      >
-                        {formatApplicationStatus(application.status)}
-                      </span>
-                    </div>
-
-                    <p className="mt-2 text-sm text-[var(--muted)]">
-                      {application.abrigoNome}
-                    </p>
-
-                    <p className="mt-1 text-xs text-[var(--muted)]">
-                      Aplicacao #{application.id}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap gap-3">
-                    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 text-center">
-                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--accent)]">
-                        Match
-                      </p>
-
-                      <p className="mt-1 text-2xl font-bold text-[var(--text)]">
-                        {formatPercent(application.scoreMatch)}
-                      </p>
-                    </div>
-
-                    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 text-center">
-                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--accent)]">
-                        Devolucao
-                      </p>
-
-                      <p className="mt-1 text-2xl font-bold text-[var(--text)]">
-                        {formatPercent(application.chanceRetorno)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {!hasMatch || !hasReturnRisk ? (
-                  <p className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-700">
-                    Esta aplicacao ainda nao tem calculo salvo de match e devolucao.
-                    Abra o animal ou envie uma nova aplicacao depois de preencher o questionario.
-                  </p>
-                ) : null}
-
-                {compatibilityReasons.length > 0 ? (
-                  <div className="mt-6 rounded-2xl border border-[var(--border)] bg-[var(--surface-2)] p-5">
-                    <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">
-                      Motivos da compatibilidade
-                    </h3>
-
-                    <ul className="mt-4 space-y-3">
-                      {compatibilityReasons.slice(0, 3).map((motivo) => (
-                          <li
-                            key={motivo}
-                            className="flex items-start gap-3 text-sm leading-6 text-[var(--text)]"
-                          >
-                            <span className="mt-2 h-2 w-2 rounded-full bg-[var(--primary)]" />
-
-                            <span>{motivo}</span>
-                          </li>
-                        ))}
-                    </ul>
-                  </div>
-                ) : null}
-
-                {returnReasons.length > 0 ? (
-                  <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-5">
-                    <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-amber-700">
-                      Fatores de devolucao
-                    </h3>
-
-                    <ul className="mt-4 space-y-3">
-                      {returnReasons.slice(0, 3).map((motivo) => (
-                        <li
-                          key={motivo}
-                          className="flex items-start gap-3 text-sm leading-6 text-[var(--text)]"
-                        >
-                          <span className="mt-2 h-2 w-2 rounded-full bg-amber-500" />
-
-                          <span>{motivo}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
-
-                <div className="mt-6 flex flex-col gap-3 border-t border-[var(--border)] pt-5 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-sm text-[var(--muted)]">
-                    Status atual:{' '}
-                    <span className="font-semibold text-[var(--text)]">
-                      {formatApplicationStatus(application.status)}
-                    </span>
-                  </p>
-
-                  <Link
-                    href={`/animais/${application.animalId}`}
-                    className="inline-flex items-center justify-center rounded-full bg-[var(--primary)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--primary-strong)]"
-                  >
-                    Ver animal
-                  </Link>
-                </div>
-              </article>
-            );
-          })}
-
-          {applications.length === 0 ? (
-            <section className="rounded-[28px] border border-dashed border-[var(--border)] bg-[var(--surface)] p-12 text-center shadow-[var(--shadow)]">
-              <p className="text-lg font-semibold text-[var(--text)]">
-                Nenhuma aplicacao enviada
-              </p>
-
-              <p className="mt-2 text-sm text-[var(--muted)]">
-                Explore o catalogo e encontre um novo companheiro.
-              </p>
-
-              <Link
-                href="/animais"
-                className="mt-6 inline-flex rounded-full bg-[var(--primary)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--primary-strong)]"
-              >
-                Explorar animais
-              </Link>
-            </section>
-          ) : null}
-        </section>
-      ) : null}
     </AppShell>
+  );
+}
+
+function CandidaturaCard({ candidatura }: { candidatura: CandidaturaProjetoResponse }) {
+  return (
+    <article className="rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-[var(--accent)]">{candidatura.status}</p>
+          <h2 className="text-xl font-bold">{candidatura.projetoTitulo}</h2>
+          <p className="mt-2 text-sm text-[var(--muted)]">Professor: {candidatura.professorNome}</p>
+        </div>
+        {typeof candidatura.scoreCompatibilidade === 'number' ? <strong className="rounded-full bg-[var(--surface-2)] px-4 py-2">{Math.round(candidatura.scoreCompatibilidade)}% match</strong> : null}
+      </div>
+      {candidatura.motivosCompatibilidade?.length ? <p className="mt-4 text-sm text-[var(--muted)]">{candidatura.motivosCompatibilidade.join(' ')}</p> : null}
+      {candidatura.pontosAtencao?.length ? <p className="mt-2 text-sm text-[var(--muted)]">Pontos de atencao: {candidatura.pontosAtencao.join(' ')}</p> : null}
+    </article>
   );
 }

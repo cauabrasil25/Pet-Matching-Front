@@ -1,66 +1,71 @@
-export type AnimalFiltroRequest = {
-  especie?: string;
-  porte?: string;
-  status?: string;
+export type ProjetoPesquisaFiltroRequest = {
+  titulo?: string;
+  professorId?: string;
+  areaTematica?: string;
+  cursoPreferencial?: string;
+  periodoMinimoMaximo?: number;
+  cargaHorariaMaxima?: number;
+  requerExperienciaPrevia?: boolean;
+  status?: StatusProjeto;
 };
 
-export type AnimalStatus = 'DISPONIVEL' | 'PENDENTE' | 'ADOTADO';
+export type StatusProjeto = 'ABERTO' | 'EM_SELECAO' | 'ENCERRADO';
 
-export type NivelEnergia = 'BAIXO' | 'MEDIO' | 'ALTO';
-
-export type NivelBarulho = 'BAIXO' | 'ALTO';
-
-export type AnimalResponse = {
+export type ProjetoPesquisaResponse = {
   id: string;
-  abrigoId?: string;
-  nome: string;
-  especie: string;
-  porte: string;
-  idade: number;
-  peso: number;
-  status: AnimalStatus;
-  nivelEnergia?: NivelEnergia;
-  nivelBarulho?: NivelBarulho;
-  temDeficienciaFisica?: boolean;
-  temDoencaCronica?: boolean;
-  sociavelEstranhos?: boolean;
-  sociavelCriancas?: boolean;
-  sociavelAnimais?: boolean;
-  sexo?: string;
-  dataCriacao?: string;
+  professorId: string;
+  professorNome: string;
+  titulo: string;
+  descricao: string;
+  areaTematica: string;
+  cursoPreferencial?: string | null;
+  periodoMinimo: number;
+  habilidadesRequeridas: string[];
+  cargaHorariaSemanal: number;
+  duracaoMeses: number;
+  numeroVagas: number;
+  vagasPreenchidas: number;
+  requerExperienciaPrevia: boolean;
+  status: StatusProjeto;
+  dataCriacao: string;
 };
 
-export type CriarAnimalRequest = {
-  nome: string;
-  especie: string;
-  porte: string;
-  idade: number;
-  peso: number;
-  status: AnimalStatus;
-  nivelEnergia: NivelEnergia;
-  nivelBarulho: NivelBarulho;
-  temDeficienciaFisica: boolean;
-  temDoencaCronica: boolean;
-  sociavelEstranhos: boolean;
-  sociavelCriancas: boolean;
-  sociavelAnimais: boolean;
+export type CriarProjetoPesquisaRequest = {
+  titulo: string;
+  descricao: string;
+  areaTematica: string;
+  cursoPreferencial?: string;
+  periodoMinimo: number;
+  habilidadesRequeridas: string[];
+  cargaHorariaSemanal: number;
+  duracaoMeses: number;
+  numeroVagas: number;
+  requerExperienciaPrevia: boolean;
 };
 
-export type AtualizarAnimalRequest = CriarAnimalRequest;
+export type AtualizarProjetoPesquisaRequest = CriarProjetoPesquisaRequest;
 
-export type AtualizarStatusAnimalRequest = {
-  status: AnimalStatus;
+export type AtualizarStatusProjetoRequest = {
+  status: StatusProjeto;
 };
 
-export type AnimalMatchResponse = {
-  animal: AnimalResponse;
+export type ProjetoPesquisaMatchResponse = {
+  projeto: ProjetoPesquisaResponse;
   score: number;
-  chanceRetorno: number;
-  explicacoes: string[];
+  indiceAtencao: number;
+  motivosCompatibilidade: string[];
 };
 
-export type ChanceRetornoResponse = {
-  animal: AnimalResponse;
-  chanceRetorno: number;
-  explicacoes: string[];
+export type PontosAtencaoProjetoResponse = {
+  projeto: ProjetoPesquisaResponse;
+  indiceAtencao: number;
+  pontosAtencao: string[];
 };
+
+export type AnimalFiltroRequest = ProjetoPesquisaFiltroRequest;
+export type AnimalResponse = ProjetoPesquisaResponse;
+export type CriarAnimalRequest = CriarProjetoPesquisaRequest;
+export type AtualizarAnimalRequest = AtualizarProjetoPesquisaRequest;
+export type AtualizarStatusAnimalRequest = AtualizarStatusProjetoRequest;
+export type AnimalMatchResponse = ProjetoPesquisaMatchResponse;
+export type ChanceRetornoResponse = PontosAtencaoProjetoResponse;

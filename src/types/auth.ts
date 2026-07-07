@@ -3,28 +3,33 @@ export type LoginRequest = {
   senha: string;
 };
 
+export type UserRole = 'ALUNO' | 'PROFESSOR' | 'ADMIN';
+
 export type LoginResponse = {
   token: string;
   user: UsuarioResponse;
 };
 
-export type RegistrarAdotanteRequest = {
+export type RegistrarAlunoRequest = {
   nome: string;
   email: string;
   senha: string;
-  cpf: string;
+  matricula: string;
+  curso: string;
+  periodoAtual: number;
 };
 
-export type RegistrarAbrigoRequest = {
+export type RegistrarProfessorRequest = {
   nome: string;
   email: string;
   senha: string;
-  cnpj: string;
+  registroInstitucional: string;
+  areaAtuacao: string;
 };
 
 export type UsuarioResponse = {
   id: string;
   email: string;
-  role: 'ADOTANTE' | 'ABRIGO';
+  role: UserRole;
   dataCriacao: string;
 };

@@ -1,38 +1,51 @@
 import { apiClient } from './apiClient';
 import type {
-  AnimalFiltroRequest,
-  AnimalResponse,
-  CriarAnimalRequest,
-  AtualizarAnimalRequest,
-  AtualizarStatusAnimalRequest,
-  AnimalMatchResponse,
-  ChanceRetornoResponse
+  AtualizarProjetoPesquisaRequest,
+  AtualizarStatusProjetoRequest,
+  CriarProjetoPesquisaRequest,
+  PontosAtencaoProjetoResponse,
+  ProjetoPesquisaFiltroRequest,
+  ProjetoPesquisaMatchResponse,
+  ProjetoPesquisaResponse
 } from '../types/animal';
 
-export const animalService = {
-  listar: (filtro?: AnimalFiltroRequest) => {
+export const projetoService = {
+  listar: (filtro?: ProjetoPesquisaFiltroRequest) => {
     const params = new URLSearchParams();
 
-    if (filtro?.especie) params.set('especie', filtro.especie);
-    if (filtro?.porte) params.set('porte', filtro.porte);
+    if (filtro?.titulo) params.set('titulo', filtro.titulo);
+    if (filtro?.professorId) params.set('professorId', filtro.professorId);
+    if (filtro?.areaTematica) params.set('areaTematica', filtro.areaTematica);
+    if (filtro?.cursoPreferencial) params.set('cursoPreferencial', filtro.cursoPreferencial);
+    if (filtro?.periodoMinimoMaximo) params.set('periodoMinimoMaximo', String(filtro.periodoMinimoMaximo));
+    if (filtro?.cargaHorariaMaxima) params.set('cargaHorariaMaxima', String(filtro.cargaHorariaMaxima));
+    if (typeof filtro?.requerExperienciaPrevia === 'boolean') {
+      params.set('requerExperienciaPrevia', String(filtro.requerExperienciaPrevia));
+    }
     if (filtro?.status) params.set('status', filtro.status);
 
     const suffix = params.toString() ? `?${params.toString()}` : '';
-    return apiClient<AnimalResponse[]>(`/api/animais${suffix}`);
+    return apiClient<ProjetoPesquisaResponse[]>(`/api/projetos-pesquisa${suffix}`);
   },
-  listarComMatching: () => apiClient<AnimalMatchResponse[]>('/api/matching/animais'),
-  calcularChanceRetorno: (id: string) => apiClient<ChanceRetornoResponse>(`/api/matching/animais/${id}/chance-retorno`),
-  buscarPorId: (id: string) => apiClient<AnimalResponse>(`/api/animais/${id}`),
-  cadastrar: (payload: CriarAnimalRequest) => apiClient<AnimalResponse>('/api/animais', {
+  listarMeus: () => apiClient<ProjetoPesquisaResponse[]>('/api/projetos-pesquisa/meus'),
+  listarComMatching: () => apiClient<ProjetoPesquisaMatchResponse[]>('/api/matching/projetos'),
+  calcularPontosAtencao: (id: string) => apiClient<PontosAtencaoProjetoResponse>(`/api/matching/projetos/${id}/pontos-atencao`),
+  buscarPorId: (id: string) => apiClient<ProjetoPesquisaResponse>(`/api/projetos-pesquisa/${id}`),
+  cadastrar: (payload: CriarProjetoPesquisaRequest) => apiClient<ProjetoPesquisaResponse>('/api/projetos-pesquisa', {
     method: 'POST',
     body: JSON.stringify(payload)
   }),
-  atualizar: (id: string, payload: AtualizarAnimalRequest) => apiClient<AnimalResponse>(`/api/animais/${id}`, {
+  atualizar: (id: string, payload: AtualizarProjetoPesquisaRequest) => apiClient<ProjetoPesquisaResponse>(`/api/projetos-pesquisa/${id}`, {
     method: 'PUT',
     body: JSON.stringify(payload)
   }),
-  atualizarStatus: (id: string, payload: AtualizarStatusAnimalRequest) => apiClient<AnimalResponse>(`/api/animais/${id}/status`, {
+  atualizarStatus: (id: string, payload: AtualizarStatusProjetoRequest) => apiClient<ProjetoPesquisaResponse>(`/api/projetos-pesquisa/${id}/status`, {
     method: 'PATCH',
     body: JSON.stringify(payload)
   })
+};
+
+export const animalService = {
+  ...projetoService,
+  calcularChanceRetorno: projetoService.calcularPontosAtencao
 };

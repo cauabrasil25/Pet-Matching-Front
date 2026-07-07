@@ -1,23 +1,25 @@
 export type StatusAplicacao = 'PENDENTE' | 'APROVADA' | 'RECUSADA' | 'DESISTENCIA';
 
-export type CriarAplicacaoAdocaoRequest = {
-  animalId: string;
+export type CriarCandidaturaProjetoRequest = {
+  projetoId: string;
 };
 
-export type AplicacaoAdocaoResponse = {
+export type CandidaturaProjetoResponse = {
   id: string;
-  adotanteId: string;
-  adotanteNome: string;
-  animalId: string;
-  animalNome: string;
-  statusAnimal: 'DISPONIVEL' | 'PENDENTE' | 'ADOTADO';
-  abrigoId: string;
-  abrigoNome: string;
-  dataAplicacao: string;
+  alunoId: string;
+  alunoNome: string;
+  projetoId: string;
+  projetoTitulo: string;
+  professorId: string;
+  professorNome: string;
   status: StatusAplicacao;
-  scoreMatch: number | null;
-  adotanteCompativel: boolean | null;
-  chanceRetorno: number | null;
+  dataCandidatura: string;
+  scoreCompatibilidade: number | null;
+  alunoQualificado: boolean | null;
+  indiceAtencao: number | null;
   motivosCompatibilidade: string[] | null;
-  motivosChanceRetorno: string[] | null;
+  pontosAtencao: string[] | null;
 };
+
+export type CriarAplicacaoAdocaoRequest = CriarCandidaturaProjetoRequest;
+export type AplicacaoAdocaoResponse = CandidaturaProjetoResponse;

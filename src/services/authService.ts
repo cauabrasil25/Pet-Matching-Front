@@ -1,5 +1,11 @@
 import { apiClient } from './apiClient';
-import type { LoginRequest, LoginResponse, RegistrarAbrigoRequest, RegistrarAdotanteRequest, UsuarioResponse } from '../types/auth';
+import type {
+  LoginRequest,
+  LoginResponse,
+  RegistrarAlunoRequest,
+  RegistrarProfessorRequest,
+  UsuarioResponse
+} from '../types/auth';
 
 const AUTH_TOKEN_KEY = 'pm_token';
 const AUTH_USER_KEY = 'pm_user';
@@ -45,11 +51,11 @@ export const authService = {
     method: 'POST',
     body: JSON.stringify(payload)
   }),
-  registrarAdotante: (payload: RegistrarAdotanteRequest) => apiClient<UsuarioResponse>('/auth/registrar/adotante', {
+  registrarAluno: (payload: RegistrarAlunoRequest) => apiClient<UsuarioResponse>('/auth/registrar/aluno', {
     method: 'POST',
     body: JSON.stringify(payload)
   }),
-  registrarAbrigo: (payload: RegistrarAbrigoRequest) => apiClient<UsuarioResponse>('/auth/registrar/abrigo', {
+  registrarProfessor: (payload: RegistrarProfessorRequest) => apiClient<UsuarioResponse>('/auth/registrar/professor', {
     method: 'POST',
     body: JSON.stringify(payload)
   })

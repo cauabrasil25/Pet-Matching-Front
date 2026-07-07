@@ -1,19 +1,15 @@
-export type CriarQuestionarioPerfilRequest = {
-  tipoMoradia: 'CASA' | 'APARTAMENTO' | 'SITIO';
-  temCriancas: boolean;
-  temOutrosPets: boolean;
-  horasSozinhoAnimal: number;
-  nivelAtividade: 'SEDENTARIO' | 'MODERADO' | 'ATIVO';
-  toleranciaBarulho: 'ALTA' | 'BAIXA';
+export type CriarQuestionarioAlunoRequest = {
+  areasInteresse: string[];
+  habilidades: string[];
+  horasDisponiveisSemana: number;
+  temExperienciaPesquisa: boolean;
+  objetivosAprendizagem: string;
 };
 
-export type QuestionarioPerfilResponse = {
+export type QuestionarioAlunoResponse = CriarQuestionarioAlunoRequest & {
   id: string;
-  adotanteId: string;
-  tipoMoradia: 'CASA' | 'APARTAMENTO' | 'SITIO';
-  temCriancas: boolean;
-  temOutrosPets: boolean;
-  horasSozinhoAnimal: number;
-  nivelAtividade: 'SEDENTARIO' | 'MODERADO' | 'ATIVO';
-  toleranciaBarulho: 'ALTA' | 'BAIXA';
+  alunoId: string;
 };
+
+export type CriarQuestionarioPerfilRequest = CriarQuestionarioAlunoRequest;
+export type QuestionarioPerfilResponse = QuestionarioAlunoResponse;
