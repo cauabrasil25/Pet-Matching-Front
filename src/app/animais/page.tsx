@@ -20,6 +20,8 @@ export default function ProjetosPage() {
   const [area, setArea] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [currentRole, setCurrentRole] = useState<string | null>(null);
+  const [sessionLoaded, setSessionLoaded] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -29,6 +31,8 @@ export default function ProjetosPage() {
         setLoading(true);
         setError('');
         const user = getCurrentUser();
+        setCurrentRole(user?.role ?? null);
+        setSessionLoaded(true);
 
         if (user?.role === 'ALUNO') {
           const matches = await projetoService.listarComMatching();
@@ -69,13 +73,16 @@ export default function ProjetosPage() {
     const haystack = `${projeto.titulo} ${projeto.descricao} ${projeto.areaTematica} ${projeto.cursoPreferencial ?? ''}`.toLowerCase();
     return haystack.includes(search.toLowerCase()) && (area === 'all' || projeto.areaTematica === area);
   });
+  const questionnaireAction = sessionLoaded && currentRole !== 'PROFESSOR'
+    ? { label: 'Meu questionario', href: '/adotante/questionario' }
+    : undefined;
 
   return (
     <AppShell
       eyebrow="Projetos"
       title="Projetos de pesquisa"
       description="Explore oportunidades publicadas por professores e veja compatibilidade quando estiver logado como aluno."
-      primaryAction={{ label: 'Meu questionario', href: '/adotante/questionario' }}
+      primaryAction={questionnaireAction}
       secondaryAction={{ label: 'Entrar', href: '/login' }}
     >
       <section className="rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[var(--shadow)]">
